@@ -527,11 +527,6 @@ async function renderInterest(interest, apiKey, days, maxArticles, model, contai
   const metaRow = document.createElement('div');
   metaRow.className = 'meta-row';
 
-  const badge = document.createElement('span');
-  badge.className = 'badge';
-  badge.textContent = interest.type;
-  metaRow.appendChild(badge);
-
   const time = document.createElement('time');
   time.textContent = `Last ${days} days`;
   metaRow.appendChild(time);
@@ -611,7 +606,7 @@ window.onload = function onLoad() {
 
   const topicInterests = INTERESTS.filter((item) => item.type === 'topic');
   const selected = pickRandomItems(topicInterests, CONFIG.randomInterests);
-  status.textContent = `Selected topic: ${selected.map((item) => item.query).join(', ')}`;
+  status.textContent = '';
 
   const tasks = selected.map((interest) =>
     renderInterest(interest, apiKey, days, maxArticles, model, results)
