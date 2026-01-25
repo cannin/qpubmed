@@ -9,25 +9,25 @@
   <title>PubMed Topic Summaries</title>
 </head>
 <body>
-  <header class="hero">
+  <header>
     <h1>PubMed Topic Summaries</h1>
-    <p class="muted">
+    <p>
       Each load picks three random interests, fetches the latest PubMed abstracts,
       and generates a short summary with PMID citations.
     </p>
-    <p class="muted">
+    <p>
       Provide your OpenAI API key as <code>?apikey=YOUR_KEY</code> once to store it locally.
     </p>
   </header>
 
   <main id="main">
-    <section id="status" class="meta-row">
-      <span class="loading"><span class="pulse"></span>Loading selections...</span>
+    <section id="status">
+      <span><span></span>Loading selections...</span>
     </section>
     <div id="results"></div>
   </main>
 
-  <footer class="muted">
+  <footer>
     Built from PubMed E-utilities. Summaries are generated client-side.
   </footer>
 
