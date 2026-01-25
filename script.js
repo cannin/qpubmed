@@ -400,6 +400,7 @@ Rules:
 - Do not put all citations in a single sentence; spread them across sentences.
 - Do not include hyperlinks other than PMID citation links.
 - Do not include a references section; it will be appended automatically.
+- Do not include a Recent articles section.
 - References are appended after the summary using:
   <p class="references-title">References</p>
   and <p class="reference-entry">PMID: 12345 - Title. Journal.</p>
@@ -568,10 +569,6 @@ async function renderInterest(interest, apiKey, days, maxArticles, model, contai
     });
 
     desc.innerHTML = summaryHtml;
-
-    const listHeading = document.createElement('h3');
-    listHeading.textContent = 'Recent articles';
-    articlesWrap.appendChild(listHeading);
 
     articlesWrap.appendChild(renderArticleList(articles));
 
