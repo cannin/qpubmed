@@ -388,6 +388,7 @@ No bibliography, no headings, no lists (<ul>/<ol>/<li>), no Markdown.
 Rules:
 - No em dashes.
 - Use only the provided abstracts; do not add facts.
+- Never provide a list of articles or bullet points outside the References section.
 - ${rankingNote}
 - Do not mention OpenAlex or citation counts.
 - Connect related papers instead of summarizing each paper separately.
@@ -617,13 +618,6 @@ window.onload = function onLoad() {
   );
 
   Promise.all(tasks)
-    .then(() => {
-      const done = document.createElement('span');
-      done.className = 'muted';
-      done.textContent = 'Done.';
-      status.appendChild(document.createElement('span'));
-      status.appendChild(done);
-    })
     .catch((error) => {
       console.error('ERROR: Failed to render results', error);
       status.innerHTML = '<span class="error">Failed to load all results.</span>';
