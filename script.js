@@ -1,4 +1,4 @@
-'use strict';
+import { INTERESTS } from './interests.js';
 
 const CONFIG = {
   pubmedBaseUrl: 'https://pubmed.ncbi.nlm.nih.gov',
@@ -11,14 +11,6 @@ const CONFIG = {
   maxAbstractChars: 2000,
   maxOutputTokens: 2000
 };
-
-const INTERESTS = [
-  { query: 'adrenocortical carcinoma', type: 'topic' },
-  { query: 'Nature', type: 'journal' },
-  { query: 'Bioinformatics', type: 'journal' },
-  { query: 'Science', type: 'journal' },
-  { query: 'colorectal organoids', type: 'topic' }
-];
 
 function getQueryParam(param) {
   const urlParams = new URLSearchParams(window.location.search);
