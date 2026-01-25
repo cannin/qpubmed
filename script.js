@@ -7,7 +7,7 @@ const CONFIG = {
   openaiModel: 'gpt-5-mini',
   days: 30,
   maxArticles: 10,
-  randomInterests: 2,
+  randomInterests: 1,
   maxAbstractChars: 2000,
   maxOutputTokens: 2000
 };
@@ -610,7 +610,7 @@ window.onload = function onLoad() {
 
   const topicInterests = INTERESTS.filter((item) => item.type === 'topic');
   const selected = pickRandomItems(topicInterests, CONFIG.randomInterests);
-  status.textContent = `Selected topics: ${selected.map((item) => item.query).join(', ')}`;
+  status.textContent = `Selected topic: ${selected.map((item) => item.query).join(', ')}`;
 
   const tasks = selected.map((interest) =>
     renderInterest(interest, apiKey, days, maxArticles, model, results)
