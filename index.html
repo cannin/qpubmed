@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" href="favicon.ico" type="image/x-icon">
+  <title>PubMed Topic Summaries</title>
+  <style>
+    :root, html[data-theme='light'] {
+      --rem: 12pt;
+      --width: 56rem;
+      --font-p: 1em/1.7 "Open Sans", "DejaVu Sans", FreeSans, Helvetica, sans-serif;
+      --font-h: .9em/1.4 "Open Sans", "DejaVu Sans", FreeSans, Helvetica, sans-serif;
+      --font-c: .9em/1.4 "DejaVu Sans Mono", monospace;
+      --border: 1px solid var(--cmed);
+      --cfg: #433;
+      --cbg: #fffdf8;
+      --cdark: #6d6a66;
+      --clight: #f4f1ed;
+      --cmed: #d8d2cc;
+      --clink: #b04b2b;
+      --cemph: #8b7a6f;
+      --cemphbg: #f3e6dd;
+      --cb: #b04b2b;
+    }
+
+    * {
+      box-sizing: border-box;
+      border-spacing: 0;
+      margin: 0;
+      padding: 0;
+    }
+
+    html { font-size: var(--rem); background: var(--cbg); }
+
+    body {
+      position: relative;
+      margin: auto;
+      max-width: var(--width);
+      font: var(--font-p);
+      color: var(--cfg);
+      padding: 0.6rem 0.9rem 2rem;
+      background: linear-gradient(180deg, #fff7ef 0%, #ffffff 45%, #f8f5f1 100%);
+      min-height: 100vh;
+    }
+
+    header, footer, section, figure, pre {
+      display: block;
+      margin: 0.6rem 0 1rem;
+      width: 100%;
+      text-align: left;
+    }
+
+    h1, h2, h3, h4 {
+      margin: 0.25em 0 0.5rem;
+      font: var(--font-h);
+      line-height: 1.2em;
+      clear: both;
+    }
+
+    h1 { font-size: 2.1em; font-weight: 300; }
+    h2 { font-size: 1.6em; font-weight: 400; }
+
+    p { margin: 0.6em 0; }
+
+    a[href] {
+      text-decoration: underline solid 1.5px var(--cmed);
+      text-underline-position: under;
+      color: var(--clink);
+    }
+
+    a:hover {
+      color: var(--cemph);
+      border-color: var(--cemph);
+    }
+
+    ul, ol { margin: 1rem 0; padding: 0 0 0 1.3rem; }
+    li:not(:last-child) { margin-bottom: 0.4rem; }
+
+    code, kbd, samp {
+      padding: 0.2em;
+      font: var(--font-c);
+      background: var(--clight);
+      border-radius: 4px;
+    }
+
+    hr { border: 0; border-top: 1px solid var(--cmed); margin: 1.2rem 0; }
+
+    .hero {
+      padding: 1rem 1.2rem;
+      background: #fffaf4;
+      border: 1px solid var(--cmed);
+      border-radius: 12px;
+    }
+
+    .meta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.6rem;
+      align-items: center;
+      margin-top: 0.4rem;
+      color: var(--cdark);
+      font-size: 0.95em;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 0.15rem 0.6rem;
+      border-radius: 999px;
+      border: 1px solid var(--cmed);
+      background: var(--clight);
+      font-size: 0.85em;
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+
+    .muted { color: var(--cdark); }
+    .error { color: #9a2f25; }
+
+    .rssItem {
+      margin: 1.4rem 0;
+      padding: 1.1rem 1.2rem;
+      border: 1px solid var(--cmed);
+      border-radius: 14px;
+      background: #fff;
+      box-shadow: 0 12px 24px rgba(90, 70, 50, 0.06);
+    }
+
+    .rssItem time { font-size: 0.9em; color: var(--cdark); }
+
+    .desc { margin-top: 0.8rem; }
+
+    .summary {
+      margin: 0.6rem 0;
+      line-height: 1.6;
+    }
+
+    .references-title {
+      margin-top: 1rem;
+      font-weight: 600;
+      color: var(--cfg);
+    }
+
+    .reference-entry {
+      margin: 0.3rem 0;
+      font-size: 0.95em;
+    }
+
+    .article-list li {
+      margin-bottom: 0.6rem;
+    }
+
+    .item-meta {
+      margin-top: 0.2rem;
+      font-size: 0.9em;
+      color: var(--cdark);
+    }
+
+    .loading {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .pulse {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--cb);
+      box-shadow: 0 0 0 rgba(176, 75, 43, 0.6);
+      animation: pulse 1.4s infinite ease-in-out;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(0.8); opacity: 0.6; }
+      50% { transform: scale(1.1); opacity: 1; }
+      100% { transform: scale(0.8); opacity: 0.6; }
+    }
+
+    @media (max-width: 720px) {
+      body { padding: 0.6rem 0.7rem 2rem; }
+      .rssItem { padding: 0.9rem; }
+    }
+  </style>
+</head>
+<body>
+  <header class="hero">
+    <h1>PubMed Topic Summaries</h1>
+    <p class="muted">
+      Each load picks three random interests, fetches the latest PubMed abstracts,
+      and generates a short summary with PMID citations.
+    </p>
+    <p class="muted">
+      Provide your OpenAI API key as <code>?apikey=YOUR_KEY</code> once to store it locally.
+    </p>
+  </header>
+
+  <main id="main">
+    <section id="status" class="meta-row">
+      <span class="loading"><span class="pulse"></span>Loading selections...</span>
+    </section>
+    <div id="results"></div>
+  </main>
+
+  <footer class="muted">
+    Built from PubMed E-utilities. Summaries are generated client-side.
+  </footer>
+
+  <script src="script.js"></script>
+</body>
+</html>
