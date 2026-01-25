@@ -484,39 +484,6 @@ ectopic pancreatic ACC emphasizes unusual presentations
   return summaryHtml + bibliographyHtml;
 }
 
-function renderArticleList(articles) {
-  const list = document.createElement('ol');
-  list.className = 'article-list';
-  articles.forEach((article) => {
-    const li = document.createElement('li');
-    const link = document.createElement('a');
-    link.href = article.pubmedUrl;
-    link.target = '_blank';
-    link.textContent = article.title || `PMID ${article.pmid}`;
-    li.appendChild(link);
-
-    const metaBits = [];
-    if (article.journal) {
-      metaBits.push(article.journal);
-    }
-    if (article.pubDate) {
-      metaBits.push(article.pubDate);
-    }
-    if (article.authors) {
-      metaBits.push(article.authors);
-    }
-    if (metaBits.length) {
-      const meta = document.createElement('div');
-      meta.className = 'item-meta';
-      meta.textContent = metaBits.join(' | ');
-      li.appendChild(meta);
-    }
-
-    list.appendChild(li);
-  });
-  return list;
-}
-
 async function renderInterest(interest, apiKey, days, maxArticles, model, container) {
   const section = document.createElement('section');
   section.className = 'rssItem';
@@ -569,8 +536,6 @@ async function renderInterest(interest, apiKey, days, maxArticles, model, contai
     });
 
     desc.innerHTML = summaryHtml;
-
-    articlesWrap.appendChild(renderArticleList(articles));
 
     const searchLinkEl = document.createElement('a');
     searchLinkEl.href = searchLink;
