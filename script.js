@@ -276,7 +276,7 @@ function appendMissingPmids(paragraphs, missingPmids) {
   const suffix = ` (${citations}).`;
   const updated = paragraphs.slice();
   if (updated.length === 0) {
-    updated.push(`Recent articles${suffix}`);
+    updated.push(`Summary${suffix}`);
   } else {
     const lastIndex = updated.length - 1;
     updated[lastIndex] = `${updated[lastIndex].trim()}${suffix}`;
