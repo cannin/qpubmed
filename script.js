@@ -326,7 +326,7 @@ function buildBibliographyHtml(pmidsInOrder, articlesByPmid) {
       return `<p class="reference-entry">PMID: ${pmid} - <a href="${url}" target="_blank">${title}</a>.</p>`;
     })
     .join('');
-  return `<p class="references-title">References</p>${entries}`;
+  return `<h3 class="references-title">References</h3>${entries}`;
 }
 
 function extractOutputText(responseJson) {
@@ -397,7 +397,7 @@ Rules:
 - Citation format must use linked PMIDs like:
   (<a href="https://pubmed.ncbi.nlm.nih.gov/12345/" target="_blank">PMID: 12345</a>;
    <a href="https://pubmed.ncbi.nlm.nih.gov/67890/" target="_blank">PMID: 67890</a>).
-- Do not put all citations in a single sentence; spread them across sentences.
+- Do not put all citations after a single sentence; spread them across sentences.
 - Do not include hyperlinks other than PMID citation links.
 - Do not include a references section; it will be appended automatically.
 - Do not include a Recent articles section.
