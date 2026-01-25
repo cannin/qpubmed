@@ -86,7 +86,7 @@ body {
 	padding: 0.25rem .6rem 0; /* okay because no header */
 	overflow-x: hidden;
 }
-body > footer { margin: 10rem 0 0; font-size: 90%; }
+body > footer { margin: 2rem 0 0; font-size: 90%; }
 p { margin: .6em 0; }
 
 /* links */
