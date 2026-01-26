@@ -12,11 +12,21 @@ const CONFIG = {
   maxOutputTokens: 2000
 };
 
+/**
+ * Get a query parameter from the current URL.
+ * @param {string} param
+ * @returns {string|null}
+ */
 function getQueryParam(param) {
   const urlParams = new URLSearchParams(window.location.search);
   return urlParams.get(param);
 }
 
+/**
+ * Resolve a required param from the URL or localStorage.
+ * @param {string} param
+ * @returns {string|null}
+ */
 function getParamValue(param) {
   let value = getQueryParam(param);
 
@@ -33,6 +43,12 @@ function getParamValue(param) {
   return value;
 }
 
+/**
+ * Resolve an optional param from the URL with a fallback value.
+ * @param {string} param
+ * @param {string} fallback
+ * @returns {string}
+ */
 function getOptionalParam(param, fallback) {
   const value = getQueryParam(param);
   if (value) {
@@ -41,6 +57,13 @@ function getOptionalParam(param, fallback) {
   return fallback;
 }
 
+/**
+ * Parse and clamp a numeric parameter.
+ * @param {number|string} value
+ * @param {number} fallback
+ * @param {number} minValue
+ * @returns {number}
+ */
 function normalizeNumberParam(value, fallback, minValue) {
   const parsed = Number(value);
   if (!Number.isFinite(parsed)) {
@@ -49,6 +72,13 @@ function normalizeNumberParam(value, fallback, minValue) {
   return Math.max(parsed, minValue);
 }
 
+/**
+ * Select random items without mutating the original array.
+ * @template T
+ * @param {T[]} items
+ * @param {number} count
+ * @returns {T[]}
+ */
 function pickRandomItems(items, count) {
   const copy = items.slice();
   for (let i = copy.length - 1; i > 0; i -= 1) {
@@ -58,6 +88,11 @@ function pickRandomItems(items, count) {
   return copy.slice(0, Math.min(count, copy.length));
 }
 
+/**
+ * Format a date for PubMed [PDat] query usage.
+ * @param {Date} date
+ * @returns {string}
+ */
 function formatPDat(date) {
   const yyyy = date.getFullYear();
   const mm = String(date.getMonth() + 1).padStart(2, '0');
@@ -65,6 +100,11 @@ function formatPDat(date) {
   return `${yyyy}/${mm}/${dd}`;
 }
 
+/**
+ * Format a date as YYYY-MM-DD.
+ * @param {Date} date
+ * @returns {string}
+ */
 function formatIsoDate(date) {
   const yyyy = date.getFullYear();
   const mm = String(date.getMonth() + 1).padStart(2, '0');
@@ -72,6 +112,11 @@ function formatIsoDate(date) {
   return `${yyyy}-${mm}-${dd}`;
 }
 
+/**
+ * Build a PubMed date range with a start and end date.
+ * @param {number} daysBack
+ * @returns {{range: string, start: Date, end: Date}}
+ */
 function buildDateRange(daysBack) {
   const today = new Date();
   const past = new Date();
@@ -83,6 +128,11 @@ function buildDateRange(daysBack) {
   };
 }
 
+/**
+ * Ensure a query includes the hasabstract filter.
+ * @param {string} pubmedQuery
+ * @returns {string}
+ */
 function ensureHasAbstract(pubmedQuery) {
   if (pubmedQuery.toLowerCase().includes('hasabstract')) {
     return pubmedQuery;
@@ -90,6 +140,11 @@ function ensureHasAbstract(pubmedQuery) {
   return `(${pubmedQuery}) AND hasabstract`;
 }
 
+/**
+ * Build a PubMed query from a topic or journal interest.
+ * @param {{query: string, type: string}} interest
+ * @returns {string}
+ */
 function buildPubmedQuery(interest) {
   if (interest.type === 'journal') {
     return ensureHasAbstract(`("${interest.query}"[jour]) AND (journal article[pt])`);
@@ -97,6 +152,12 @@ function buildPubmedQuery(interest) {
   return ensureHasAbstract(`(${interest.query})`);
 }
 
+/**
+ * Build a PubMed search link that mirrors the query window.
+ * @param {string} pubmedQuery
+ * @param {number} days
+ * @returns {string}
+ */
 function buildPubmedSearchLink(pubmedQuery, days) {
   const today = new Date();
   const start = new Date();
@@ -106,6 +167,11 @@ function buildPubmedSearchLink(pubmedQuery, days) {
   return `${CONFIG.pubmedBaseUrl}/?${params.toString()}`;
 }
 
+/**
+ * Fetch and parse XML from a URL.
+ * @param {string} url
+ * @returns {Promise<Document>}
+ */
 async function fetchXml(url) {
   const response = await fetch(url);
   if (!response.ok) {
@@ -116,6 +182,11 @@ async function fetchXml(url) {
   return parser.parseFromString(text, 'application/xml');
 }
 
+/**
+ * Convert a month name or number to a two-digit string.
+ * @param {string} value
+ * @returns {string}
+ */
 function monthToNumber(value) {
   if (!value) {
     return '';
@@ -142,6 +213,11 @@ function monthToNumber(value) {
   return map[key] || '';
 }
 
+/**
+ * Extract a PubMed date string from an article node.
+ * @param {Element} articleNode
+ * @returns {string}
+ */
 function parsePubDate(articleNode) {
   const articleDate = articleNode.querySelector('ArticleDate');
   const dateNode = articleDate || articleNode.querySelector('Journal > JournalIssue > PubDate');
@@ -163,6 +239,11 @@ function parsePubDate(articleNode) {
   return year;
 }
 
+/**
+ * Extract author names from a PubMed article node.
+ * @param {Element} articleNode
+ * @returns {string}
+ */
 function parseAuthors(articleNode) {
   const authorNodes = Array.from(articleNode.querySelectorAll('AuthorList > Author'));
   const authors = authorNodes
@@ -185,6 +266,11 @@ function parseAuthors(articleNode) {
   return authors.join(', ');
 }
 
+/**
+ * Parse a PubMed XML article into a normalized object.
+ * @param {Element} articleNode
+ * @returns {{pmid: string, title: string, journal: string, abstract: string, authors: string, pubDate: string, pubmedUrl: string}}
+ */
 function parsePubmedArticle(articleNode) {
   const pmid = articleNode.querySelector('PMID')?.textContent?.trim() || '';
   const title = articleNode.querySelector('ArticleTitle')?.textContent?.trim() || '';
@@ -207,6 +293,13 @@ function parsePubmedArticle(articleNode) {
   };
 }
 
+/**
+ * Fetch recent PubMed articles for an interest.
+ * @param {{query: string, type: string}} interest
+ * @param {number} days
+ * @param {number} maxArticles
+ * @returns {Promise<{articles: Array<{pmid: string, title: string, journal: string, abstract: string, authors: string, pubDate: string, pubmedUrl: string}>, pubmedQuery: string, dateRange: {range: string, start: Date, end: Date}, searchLink: string}>}
+ */
 async function fetchPubmedArticles(interest, days, maxArticles) {
   const pubmedQuery = buildPubmedQuery(interest);
   const dateRange = buildDateRange(days);
@@ -239,6 +332,11 @@ async function fetchPubmedArticles(interest, days, maxArticles) {
   };
 }
 
+/**
+ * Escape HTML special characters.
+ * @param {string} value
+ * @returns {string}
+ */
 function escapeHtml(value) {
   return String(value)
     .replace(/&/g, '&amp;')
@@ -248,10 +346,20 @@ function escapeHtml(value) {
     .replace(/'/g, '&#39;');
 }
 
+/**
+ * Build a PMID anchor link.
+ * @param {string} pmid
+ * @returns {string}
+ */
 function buildPmidLink(pmid) {
   return `<a href="${CONFIG.pubmedBaseUrl}/${pmid}/" target="_blank">PMID: ${pmid}</a>`;
 }
 
+/**
+ * Extract PMIDs from a text string.
+ * @param {string} text
+ * @returns {string[]}
+ */
 function extractPmids(text) {
   const regex = /(https?:\/\/pubmed\.ncbi\.nlm\.nih\.gov\/(\d+)\/)|\bPMID:\s*(\d+)\b/gi;
   const found = [];
@@ -268,6 +376,12 @@ function extractPmids(text) {
   return found;
 }
 
+/**
+ * Append missing PMIDs to the final paragraph list.
+ * @param {string[]} paragraphs
+ * @param {string[]} missingPmids
+ * @returns {string[]}
+ */
 function appendMissingPmids(paragraphs, missingPmids) {
   if (!missingPmids.length) {
     return paragraphs;
@@ -284,6 +398,11 @@ function appendMissingPmids(paragraphs, missingPmids) {
   return updated;
 }
 
+/**
+ * Normalize summary HTML into paragraph strings.
+ * @param {string} text
+ * @returns {string[]}
+ */
 function normalizeSummaryParagraphs(text) {
   const summaryMatches = Array.from(
     text.matchAll(/<p[^>]*class=["']summary["'][^>]*>([\s\S]*?)<\/p>/gi)
@@ -310,6 +429,12 @@ function normalizeSummaryParagraphs(text) {
   return text.trim() ? [text.trim()] : [];
 }
 
+/**
+ * Build HTML for the References section.
+ * @param {string[]} pmidsInOrder
+ * @param {Object<string, {title?: string, journal?: string}>} articlesByPmid
+ * @returns {string}
+ */
 function buildBibliographyHtml(pmidsInOrder, articlesByPmid) {
   if (!pmidsInOrder.length) {
     return '';
@@ -329,6 +454,11 @@ function buildBibliographyHtml(pmidsInOrder, articlesByPmid) {
   return `<h3 class="references-title">References</h3>${entries}`;
 }
 
+/**
+ * Extract output text from an OpenAI Responses API payload.
+ * @param {object} responseJson
+ * @returns {string}
+ */
 function extractOutputText(responseJson) {
   if (responseJson.output_text && responseJson.output_text.trim()) {
     return responseJson.output_text.trim();
@@ -361,6 +491,17 @@ function extractOutputText(responseJson) {
   return parts.join('\n').trim();
 }
 
+/**
+ * Build a GPT summary with PMID-linked citations.
+ * @param {object} options
+ * @param {string} options.apiKey
+ * @param {string} options.query
+ * @param {number} options.days
+ * @param {Array<{pmid: string, title: string, journal: string, abstract: string, authors: string, pubDate: string, pubmedUrl: string}>} options.articles
+ * @param {string} options.model
+ * @param {boolean} options.rankedByCitations
+ * @returns {Promise<string>}
+ */
 async function buildGptSummary({ apiKey, query, days, articles, model, rankedByCitations }) {
   if (!apiKey) {
     throw new Error('Missing OpenAI API key.');
@@ -484,6 +625,16 @@ ectopic pancreatic ACC emphasizes unusual presentations
   return summaryHtml + bibliographyHtml;
 }
 
+/**
+ * Render a topic section with summary content and a PubMed link.
+ * @param {{query: string, type: string}} interest
+ * @param {string} apiKey
+ * @param {number} days
+ * @param {number} maxArticles
+ * @param {string} model
+ * @param {HTMLElement} container
+ * @returns {Promise<void>}
+ */
 async function renderInterest(interest, apiKey, days, maxArticles, model, container) {
   const section = document.createElement('section');
   section.className = 'rssItem';
@@ -548,6 +699,10 @@ async function renderInterest(interest, apiKey, days, maxArticles, model, contai
   }
 }
 
+/**
+ * Initialize the page on load.
+ * @returns {void}
+ */
 window.onload = function onLoad() {
   const apiKey = getParamValue('apikey');
   const days = normalizeNumberParam(getOptionalParam('days', CONFIG.days), CONFIG.days, 1);
