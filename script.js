@@ -712,6 +712,7 @@ window.onload = function onLoad() {
     1
   );
   const model = getOptionalParam('model', CONFIG.openaiModel);
+  const typeFilter = getOptionalParam('type', '').toLowerCase();
 
   const status = document.getElementById('status');
   const results = document.getElementById('results');
@@ -721,7 +722,14 @@ window.onload = function onLoad() {
     return;
   }
 
-  const selected = pickRandomItems(INTERESTS, CONFIG.randomInterests);
+  const filteredInterests = ['topic', 'journal'].includes(typeFilter)
+    ? INTERESTS.filter((item) => item.type === typeFilter)
+    : INTERESTS;
+  if (!filteredInterests.length) {
+    status.innerHTML = '<span class="error">No interests match the requested type.</span>';
+    return;
+  }
+  const selected = pickRandomItems(filteredInterests, CONFIG.randomInterests);
   status.textContent = '';
 
   const tasks = selected.map((interest) =>
