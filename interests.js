@@ -1,5 +1,8 @@
 const INTERESTS = [
   { query: 'adrenocortical carcinoma', type: 'topic' },
+  { query: 'colorectal organoids', type: 'topic' },
+  { query: 'relapsed sclc', type: 'topic' },
+  { query: 'cancer nanopore', type: 'topic' },
   { query: 'Am J Hum Genet', type: 'journal' },
   { query: 'Bioessays', type: 'journal' },
   { query: 'Nature', type: 'journal' },
@@ -39,8 +42,7 @@ const INTERESTS = [
   { query: 'PLoS Genet', type: 'journal' },
   { query: 'Proc Natl Acad Sci U S A', type: 'journal' },
   { query: 'Science', type: 'journal' },
-  { query: 'Trends Biochem Sci', type: 'journal' },
-  { query: 'colorectal organoids', type: 'topic' }
+  { query: 'Trends Biochem Sci', type: 'journal' }
 ];
 
 export { INTERESTS };
