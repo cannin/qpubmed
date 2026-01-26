@@ -88,6 +88,7 @@ body {
 }
 body > footer { margin: 2rem 0 0; font-size: 90%; }
 p { margin: .6em 0; }
+p.summary { text-align: justify; }
 
 /* links */
 a[href]{ text-decoration: underline solid 1.5px var(--cmed); text-underline-position: under; }
