@@ -721,8 +721,7 @@ window.onload = function onLoad() {
     return;
   }
 
-  const topicInterests = INTERESTS.filter((item) => item.type === 'topic');
-  const selected = pickRandomItems(topicInterests, CONFIG.randomInterests);
+  const selected = pickRandomItems(INTERESTS, CONFIG.randomInterests);
   status.textContent = '';
 
   const tasks = selected.map((interest) =>
