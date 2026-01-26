@@ -58,6 +58,25 @@ function getOptionalParam(param, fallback) {
 }
 
 /**
+ * Resolve an optional param from the URL or localStorage with a fallback value.
+ * @param {string} param
+ * @param {string|number} fallback
+ * @returns {string|number}
+ */
+function getStoredOptionalParam(param, fallback) {
+  const value = getQueryParam(param);
+  if (value) {
+    localStorage.setItem(param, value);
+    return value;
+  }
+  const stored = localStorage.getItem(param);
+  if (stored) {
+    return stored;
+  }
+  return fallback;
+}
+
+/**
  * Parse and clamp a numeric parameter.
  * @param {number|string} value
  * @param {number} fallback
@@ -705,9 +724,9 @@ async function renderInterest(interest, apiKey, days, maxArticles, model, contai
  */
 window.onload = function onLoad() {
   const apiKey = getParamValue('apikey');
-  const days = normalizeNumberParam(getOptionalParam('days', CONFIG.days), CONFIG.days, 1);
+  const days = normalizeNumberParam(getStoredOptionalParam('days', CONFIG.days), CONFIG.days, 1);
   const maxArticles = normalizeNumberParam(
-    getOptionalParam('maxArticles', CONFIG.maxArticles),
+    getStoredOptionalParam('maxArticles', CONFIG.maxArticles),
     CONFIG.maxArticles,
     1
   );
