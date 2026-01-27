@@ -543,7 +543,7 @@ async function buildGptSummary({ apiKey, query, days, articles, model, rankedByC
     : 'Papers are already selected; do not mention citation counts.';
 
   const systemPrompt = `You write an RSS description as HTML.
-Output MUST be 1-3 short paragraphs wrapped in <p class="summary"> tags only.
+Output MUST be 1 to 3 short paragraphs wrapped in <p class="summary"> tags only.
 No bibliography, no headings, no lists (<ul>/<ol>/<li>), no Markdown.
 Rules:
 - No em dashes.
@@ -552,14 +552,15 @@ Rules:
 - ${rankingNote}
 - Do not mention OpenAlex or citation counts.
 - Connect related papers instead of summarizing each paper separately.
-- Sentences should cite a maximum of 3 papers.
+- Do not put all citations after a single sentence; spread them across sentences.
+- Sentences should cite a maximum of 3 PMIDs; more than 3 split into other sentences.
 - Connect the papers by some meaningful topic (e.g., studies in different age groups, methological papers, mouse studies, etc.)
-- Total length less than 300 words (target 200).
+- Total length less than 500 words.
 - Cite EVERY paper at least once using inline citations at sentence ends.
+- Sentences should never be composed of only citations.
 - Citation format must use linked PMIDs like:
   (<a href="https://pubmed.ncbi.nlm.nih.gov/12345/" target="_blank">PMID: 12345</a>;
    <a href="https://pubmed.ncbi.nlm.nih.gov/67890/" target="_blank">PMID: 67890</a>).
-- Do not put all citations after a single sentence; spread them across sentences.
 - Do not include hyperlinks other than PMID citation links.
 - Do not include a references section; it will be appended automatically.
 - Do not include a Recent articles section.
