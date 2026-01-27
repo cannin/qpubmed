@@ -609,6 +609,7 @@ ectopic pancreatic ACC emphasizes unusual presentations
   if (!text) {
     throw new Error('OpenAI summary was empty.');
   }
+  console.log('LLM raw output:', text);
 
   if (text.startsWith('```')) {
     text = text.replace(/^```[a-zA-Z]*\n?/, '').replace(/```$/, '').trim();
