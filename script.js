@@ -8,8 +8,8 @@ const CONFIG = {
   days: 30,
   maxArticles: 10,
   randomInterests: 1,
-  maxAbstractChars: 2000,
-  maxOutputTokens: 2000
+  maxAbstractChars: 5000,
+  maxOutputTokens: 5000
 };
 
 /**
@@ -582,6 +582,8 @@ ectopic pancreatic ACC emphasizes unusual presentations
     null,
     2
   );
+  console.log('LLM system prompt:', systemPrompt);
+  console.log('LLM user prompt:', userPrompt);
 
   const body = {
     model,
