@@ -1,5 +1,4 @@
 import { INTERESTS } from './interests.js';
-//import { ENV } from './.env.js';
 
 const VERSION = 'v0.0.12';
 
