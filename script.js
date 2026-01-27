@@ -552,7 +552,9 @@ Rules:
 - ${rankingNote}
 - Do not mention OpenAlex or citation counts.
 - Connect related papers instead of summarizing each paper separately.
-- Total length about 150 words (target 120-180).
+- Sentences should cite a maximum of 3 papers.
+- Connect the papers by some meaningful topic (e.g., studies in different age groups, methological papers, mouse studies, etc.)
+- Total length less than 300 words (target 200).
 - Cite EVERY paper at least once using inline citations at sentence ends.
 - Citation format must use linked PMIDs like:
   (<a href="https://pubmed.ncbi.nlm.nih.gov/12345/" target="_blank">PMID: 12345</a>;
