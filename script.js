@@ -1,7 +1,7 @@
 import { INTERESTS } from './interests.js';
 //import { ENV } from './.env.js';
 
-const VERSION = 'v0.0.9';
+const VERSION = 'v0.0.10';
 
 const CONFIG = {
   pubmedBaseUrl: 'https://pubmed.ncbi.nlm.nih.gov',
@@ -853,12 +853,13 @@ async function renderInterest(
 }
 
 /**
- * Initialize the page on load.
+ * Initialize the page with optional environment configuration.
+ * @param {object} env
  * @returns {void}
  */
-window.onload = function onLoad() {
+function init(env) {
   document.title = document.title.replace('$VERSION', VERSION);
-  const apiKey = getParamValue('apikey');
+  const apiKey = env?.OPENAI_API_KEY || getParamValue('apikey');
   const days = normalizeNumberParam(getStoredOptionalParam('days', CONFIG.days), CONFIG.days, 1);
   const maxSummaryArticles = normalizeNumberParam(
     getStoredOptionalParam('maxSummaryArticles', CONFIG.maxSummaryArticles),
@@ -913,5 +914,20 @@ window.onload = function onLoad() {
     .catch((error) => {
       console.error('ERROR: Failed to render results', error);
       status.innerHTML = '<span class="error">Failed to load all results.</span>';
+    });
+}
+
+/**
+ * Initialize the page on load.
+ * @returns {void}
+ */
+window.onload = function onLoad() {
+  import('./.env.js')
+    .then((module) => {
+      const env = module?.ENV || {};
+      init(env);
+    })
+    .catch(() => {
+      init({});
     });
 };
