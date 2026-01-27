@@ -1,5 +1,7 @@
 import { INTERESTS } from './interests.js';
 
+const APP_VERSION = '0.0.1';
+
 const CONFIG = {
   pubmedBaseUrl: 'https://pubmed.ncbi.nlm.nih.gov',
   eutilsBaseUrl: 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils',
@@ -522,10 +524,6 @@ function extractOutputText(responseJson) {
  * @returns {Promise<string>}
  */
 async function buildGptSummary({ apiKey, query, days, articles, model, rankedByCitations }) {
-  if (!apiKey) {
-    throw new Error('Missing OpenAI API key.');
-  }
-
   const papersForPrompt = articles.map((article) => {
     const abstract = article.abstract.replace(/\s+/g, ' ').trim().slice(0, CONFIG.maxAbstractChars);
     return {
@@ -585,6 +583,9 @@ ectopic pancreatic ACC emphasizes unusual presentations
   );
   console.log('LLM system prompt:', systemPrompt);
   console.log('LLM user prompt:', userPrompt);
+  if (!apiKey) {
+    throw new Error('Missing OpenAI API key.');
+  }
 
   const body = {
     model,
