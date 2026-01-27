@@ -660,7 +660,7 @@ async function renderInterest(interest, apiKey, days, maxArticles, model, contai
   section.className = 'rssItem';
 
   const heading = document.createElement('h2');
-  heading.textContent = interest.query;
+  heading.textContent = `${interest.query} (${interest.type})`;
   section.appendChild(heading);
 
   const metaRow = document.createElement('div');
