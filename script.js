@@ -1,14 +1,17 @@
 import { INTERESTS } from './interests.js';
+//import { ENV } from './.env.js';
 
-const VERSION = 'v0.0.7';
+const VERSION = 'v0.0.9';
 
 const CONFIG = {
   pubmedBaseUrl: 'https://pubmed.ncbi.nlm.nih.gov',
   eutilsBaseUrl: 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils',
+  openAlexBaseUrl: 'https://api.openalex.org/works',
   openaiResponsesUrl: 'https://api.openai.com/v1/responses',
   openaiModel: 'gpt-5-mini',
   days: 30,
-  maxArticles: 10,
+  maxSummaryArticles: 10,
+  maxRetrievalArticles: 25,
   randomInterests: 1,
   maxAbstractChars: 5000,
   maxOutputTokens: 5000
@@ -318,16 +321,17 @@ function parsePubmedArticle(articleNode) {
  * Fetch recent PubMed articles for an interest.
  * @param {{query: string, type: string}} interest
  * @param {number} days
- * @param {number} maxArticles
- * @returns {Promise<{articles: Array<{pmid: string, title: string, journal: string, abstract: string, authors: string, pubDate: string, pubmedUrl: string}>, pubmedQuery: string, dateRange: {range: string, start: Date, end: Date}, searchLink: string}>}
+ * @param {number} maxRetrievalArticles
+ * @returns {Promise<{articles: Array<{pmid: string, title: string, journal: string, abstract: string, authors: string, pubDate: string, pubmedUrl: string}>, pubmedQuery: string, dateRange: {range: string, start: Date, end: Date}, searchLink: string, totalCount: number}>}
  */
-async function fetchPubmedArticles(interest, days, maxArticles) {
+async function fetchPubmedArticles(interest, days, maxRetrievalArticles) {
   const pubmedQuery = buildPubmedQuery(interest);
   const dateRange = buildDateRange(days);
   const fullQuery = `(${pubmedQuery}) AND ${dateRange.range}`;
-  const esearchUrl = `${CONFIG.eutilsBaseUrl}/esearch.fcgi?db=pubmed&retmax=${maxArticles}&term=${encodeURIComponent(fullQuery)}`;
+  const esearchUrl = `${CONFIG.eutilsBaseUrl}/esearch.fcgi?db=pubmed&retmax=${maxRetrievalArticles}&term=${encodeURIComponent(fullQuery)}`;
 
   const esearchXml = await fetchXml(esearchUrl);
+  const totalCount = Number(esearchXml.querySelector('Count')?.textContent || 0);
   const pmids = Array.from(esearchXml.querySelectorAll('Id')).map((node) => node.textContent.trim());
 
   if (pmids.length === 0) {
@@ -335,7 +339,8 @@ async function fetchPubmedArticles(interest, days, maxArticles) {
       articles: [],
       pubmedQuery,
       dateRange,
-      searchLink: buildPubmedSearchLink(pubmedQuery, days)
+      searchLink: buildPubmedSearchLink(pubmedQuery, days),
+      totalCount
     };
   }
 
@@ -349,8 +354,79 @@ async function fetchPubmedArticles(interest, days, maxArticles) {
     articles,
     pubmedQuery,
     dateRange,
-    searchLink: buildPubmedSearchLink(pubmedQuery, days)
+    searchLink: buildPubmedSearchLink(pubmedQuery, days),
+    totalCount
   };
+}
+
+/**
+ * Extract a PMID from OpenAlex ids.
+ * @param {object} ids
+ * @returns {string|null}
+ */
+function extractPmidFromOpenAlexIds(ids) {
+  if (!ids || typeof ids !== 'object') {
+    return null;
+  }
+  const candidates = [ids.pmid, ids.pubmed].filter(Boolean);
+  for (const value of candidates) {
+    if (typeof value !== 'string') {
+      continue;
+    }
+    const digits = value.match(/\d+/g);
+    if (digits && digits.length) {
+      return digits[digits.length - 1];
+    }
+  }
+  return null;
+}
+
+/**
+ * Fetch OpenAlex cited-by counts for a list of PMIDs.
+ * @param {string[]} pmids
+ * @returns {Promise<Object<string, number>>}
+ */
+async function fetchOpenAlexCitedByCounts(pmids) {
+  if (!pmids.length) {
+    return {};
+  }
+  const filter = `ids.pmid:${pmids.join('|')}`;
+  const params = new URLSearchParams({
+    filter,
+    select: 'ids,cited_by_count',
+    'per-page': String(Math.min(100, pmids.length))
+  });
+  const url = `${CONFIG.openAlexBaseUrl}?${params.toString()}`;
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`OpenAlex request failed with ${response.status}`);
+  }
+  const data = await response.json();
+  const results = Array.isArray(data?.results) ? data.results : [];
+  const mapping = {};
+  results.forEach((row) => {
+    const pmid = extractPmidFromOpenAlexIds(row?.ids);
+    if (!pmid) {
+      return;
+    }
+    const count = Number(row?.cited_by_count);
+    mapping[pmid] = Number.isFinite(count) ? count : 0;
+  });
+  return mapping;
+}
+
+/**
+ * Attach OpenAlex cited-by counts to articles.
+ * @param {Array<{pmid: string}>} articles
+ * @returns {Promise<Array<{pmid: string, citedByCount: number}>>}
+ */
+async function attachCitedByCounts(articles) {
+  const pmids = articles.map((article) => article.pmid).filter(Boolean);
+  const mapping = await fetchOpenAlexCitedByCounts(pmids);
+  return articles.map((article) => ({
+    ...article,
+    citedByCount: mapping[article.pmid] ?? 0
+  }));
 }
 
 /**
@@ -454,12 +530,19 @@ function normalizeSummaryParagraphs(text) {
  * Build HTML for the References section.
  * @param {string[]} pmidsInOrder
  * @param {Object<string, {title?: string, journal?: string}>} articlesByPmid
+ * @param {number} papersFound
+ * @param {number} papersSummarized
  * @returns {string}
  */
-function buildBibliographyHtml(pmidsInOrder, articlesByPmid) {
+function buildBibliographyHtml(pmidsInOrder, articlesByPmid, papersFound, papersSummarized) {
   if (!pmidsInOrder.length) {
     return '';
   }
+  const foundCount = Number.isFinite(papersFound) ? papersFound : null;
+  const summarizedCount = Number.isFinite(papersSummarized) ? papersSummarized : null;
+  const headingSuffix = (foundCount !== null && summarizedCount !== null)
+    ? ` (${foundCount} papers found; ${summarizedCount} summarized)`
+    : '';
   const entries = pmidsInOrder
     .map((pmid) => {
       const article = articlesByPmid[pmid];
@@ -472,7 +555,7 @@ function buildBibliographyHtml(pmidsInOrder, articlesByPmid) {
       return `<p class="reference-entry">PMID: ${pmid} - <a href="${url}" target="_blank">${title}</a>.</p>`;
     })
     .join('');
-  return `<h3 class="references-title">References</h3>${entries}`;
+  return `<h3 class="references-title">References${headingSuffix}</h3>${entries}`;
 }
 
 /**
@@ -519,11 +602,22 @@ function extractOutputText(responseJson) {
  * @param {string} options.query
  * @param {number} options.days
  * @param {Array<{pmid: string, title: string, journal: string, abstract: string, authors: string, pubDate: string, pubmedUrl: string}>} options.articles
+ * @param {number} options.papersFound
+ * @param {number} options.papersSummarized
  * @param {string} options.model
  * @param {boolean} options.rankedByCitations
  * @returns {Promise<string>}
  */
-async function buildGptSummary({ apiKey, query, days, articles, model, rankedByCitations }) {
+async function buildGptSummary({
+  apiKey,
+  query,
+  days,
+  articles,
+  papersFound,
+  papersSummarized,
+  model,
+  rankedByCitations
+}) {
   const papersForPrompt = articles.map((article) => {
     const abstract = article.abstract.replace(/\s+/g, ' ').trim().slice(0, CONFIG.maxAbstractChars);
     return {
@@ -564,7 +658,7 @@ Rules:
 - Do not include a references section; it will be appended automatically.
 - Do not include a Recent articles section.
 - References are appended after the summary using:
-  <p class="references-title">References</p>
+  <h3 class="references-title">References</h3>
   and <p class="reference-entry">PMID: 12345 - Title. Journal.</p>
 Example:
 <p class="summary">Recent ACC studies link rare clinical phenotypes and germline
@@ -648,7 +742,12 @@ ectopic pancreatic ACC emphasizes unusual presentations
     return acc;
   }, {});
 
-  const bibliographyHtml = buildBibliographyHtml(pmidsInOrder, articlesByPmid);
+  const bibliographyHtml = buildBibliographyHtml(
+    pmidsInOrder,
+    articlesByPmid,
+    papersFound,
+    papersSummarized
+  );
   return summaryHtml + bibliographyHtml;
 }
 
@@ -657,12 +756,23 @@ ectopic pancreatic ACC emphasizes unusual presentations
  * @param {{query: string, type: string}} interest
  * @param {string} apiKey
  * @param {number} days
- * @param {number} maxArticles
+ * @param {number} maxSummaryArticles
+ * @param {number} maxRetrievalArticles
+ * @param {number} minCited
  * @param {string} model
  * @param {HTMLElement} container
  * @returns {Promise<void>}
  */
-async function renderInterest(interest, apiKey, days, maxArticles, model, container) {
+async function renderInterest(
+  interest,
+  apiKey,
+  days,
+  maxSummaryArticles,
+  maxRetrievalArticles,
+  minCited,
+  model,
+  container
+) {
   const section = document.createElement('section');
   section.className = 'rssItem';
 
@@ -690,10 +800,10 @@ async function renderInterest(interest, apiKey, days, maxArticles, model, contai
   container.appendChild(section);
 
   try {
-    const { articles, pubmedQuery, dateRange, searchLink } = await fetchPubmedArticles(
+    const { articles, pubmedQuery, dateRange, searchLink, totalCount } = await fetchPubmedArticles(
       interest,
       days,
-      maxArticles
+      maxRetrievalArticles
     );
 
     const rangeLabel = `${formatIsoDate(dateRange.start)} to ${formatIsoDate(dateRange.end)}`;
@@ -704,13 +814,29 @@ async function renderInterest(interest, apiKey, days, maxArticles, model, contai
       return;
     }
 
+    const papersFound = Number.isFinite(totalCount) ? totalCount : articles.length;
+    let summaryArticles = articles.slice(0, maxSummaryArticles);
+    if (minCited > 0) {
+      const withCounts = await attachCitedByCounts(articles);
+      summaryArticles = withCounts
+        .filter((article) => (article.citedByCount ?? 0) >= minCited)
+        .sort((a, b) => (b.citedByCount ?? 0) - (a.citedByCount ?? 0))
+        .slice(0, maxSummaryArticles);
+      if (!summaryArticles.length) {
+        desc.innerHTML = `<p class="summary">No articles met the minimum citation count (${minCited}).</p>`;
+        return;
+      }
+    }
+
     const summaryHtml = await buildGptSummary({
       apiKey,
       query: pubmedQuery,
       days,
-      articles,
+      articles: summaryArticles,
+      papersFound,
+      papersSummarized: summaryArticles.length,
       model,
-      rankedByCitations: false
+      rankedByCitations: minCited > 0
     });
 
     desc.innerHTML = summaryHtml;
@@ -734,11 +860,17 @@ window.onload = function onLoad() {
   document.title = document.title.replace('$VERSION', VERSION);
   const apiKey = getParamValue('apikey');
   const days = normalizeNumberParam(getStoredOptionalParam('days', CONFIG.days), CONFIG.days, 1);
-  const maxArticles = normalizeNumberParam(
-    getStoredOptionalParam('maxArticles', CONFIG.maxArticles),
-    CONFIG.maxArticles,
+  const maxSummaryArticles = normalizeNumberParam(
+    getStoredOptionalParam('maxSummaryArticles', CONFIG.maxSummaryArticles),
+    CONFIG.maxSummaryArticles,
     1
   );
+  const maxRetrievalArticles = normalizeNumberParam(
+    getStoredOptionalParam('maxRetrievalArticles', CONFIG.maxRetrievalArticles),
+    CONFIG.maxRetrievalArticles,
+    1
+  );
+  const minCited = normalizeNumberParam(getOptionalParam('minCited', 0), 0, 0);
   const model = getOptionalParam('model', CONFIG.openaiModel);
   const typeFilter = getOptionalParam('type', '').toLowerCase();
   const queryOverride = getOptionalParam('query', '').trim();
@@ -758,13 +890,23 @@ window.onload = function onLoad() {
     status.innerHTML = '<span class="error">No interests match the requested type.</span>';
     return;
   }
+  const queryType = ['topic', 'journal'].includes(typeFilter) ? typeFilter : 'topic';
   const selected = queryOverride
-    ? [{ query: queryOverride, type: 'topic' }]
+    ? [{ query: queryOverride, type: queryType }]
     : pickRandomItems(filteredInterests, CONFIG.randomInterests);
   status.textContent = '';
 
   const tasks = selected.map((interest) =>
-    renderInterest(interest, apiKey, days, maxArticles, model, results)
+    renderInterest(
+      interest,
+      apiKey,
+      days,
+      maxSummaryArticles,
+      maxRetrievalArticles,
+      minCited,
+      model,
+      results
+    )
   );
 
   Promise.all(tasks)
