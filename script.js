@@ -552,7 +552,7 @@ Rules:
 - Connect related papers instead of summarizing each paper separately.
 - Do not put all citations after a single sentence; spread them across sentences.
 - Sentences should cite a maximum of 4 PMIDs; more than 4 PMIDs split into other sentences.
-- The majority of sententences should cite at least 2 PMIDs.
+- The majority of sentences should cite at least 2 PMIDs.
 - Connect the papers by some meaningful topic (e.g., studies in different age groups, methological papers, mouse studies, etc.)
 - Total length less than 500 words.
 - Cite EVERY paper at least once using inline citations at sentence ends.
