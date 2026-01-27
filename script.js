@@ -1,6 +1,6 @@
 import { INTERESTS } from './interests.js';
 
-const VERSION = 'v0.0.13';
+const VERSION = 'v0.0.14';
 
 const CONFIG = {
   pubmedBaseUrl: 'https://pubmed.ncbi.nlm.nih.gov',
@@ -859,6 +859,7 @@ async function renderInterest(
  * @returns {void}
  */
 function init(env) {
+  console.log('App version:', VERSION);
   document.title = document.title.replace('$VERSION', VERSION);
   const apiKey = env?.OPENAI_API_KEY || getParamValue('apikey');
   const days = normalizeNumberParam(getStoredOptionalParam('days', CONFIG.days), CONFIG.days, 1);
