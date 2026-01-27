@@ -12,7 +12,7 @@ index.html?apikey=YOUR_KEY
 
 The key is stored in `localStorage` for subsequent visits.
 
-You can also copy `.env.js.example` to `.env.js` and set `OPENAI_API_KEY`.
+You can also copy `.env.js.example` to `.env.js` and set `OPENAI_API_KEY` for local use (file:// or localhost).
 
 ## Query Parameters
 

@@ -1,7 +1,7 @@
 import { INTERESTS } from './interests.js';
 //import { ENV } from './.env.js';
 
-const VERSION = 'v0.0.10';
+const VERSION = 'v0.0.12';
 
 const CONFIG = {
   pubmedBaseUrl: 'https://pubmed.ncbi.nlm.nih.gov',
@@ -815,8 +815,9 @@ async function renderInterest(
     }
 
     const papersFound = Number.isFinite(totalCount) ? totalCount : articles.length;
+    const shouldUseOpenAlex = minCited > 0;
     let summaryArticles = articles.slice(0, maxSummaryArticles);
-    if (minCited > 0) {
+    if (shouldUseOpenAlex) {
       const withCounts = await attachCitedByCounts(articles);
       summaryArticles = withCounts
         .filter((article) => (article.citedByCount ?? 0) >= minCited)
@@ -836,7 +837,7 @@ async function renderInterest(
       papersFound,
       papersSummarized: summaryArticles.length,
       model,
-      rankedByCitations: minCited > 0
+      rankedByCitations: shouldUseOpenAlex
     });
 
     desc.innerHTML = summaryHtml;
@@ -918,10 +919,26 @@ function init(env) {
 }
 
 /**
+ * Decide whether to attempt a local env module import.
+ * @returns {boolean}
+ */
+function shouldAttemptEnvImport() {
+  const { protocol, hostname } = window.location;
+  if (protocol === 'file:') {
+    return true;
+  }
+  return ['localhost', '127.0.0.1', '::1', '0.0.0.0'].includes(hostname);
+}
+
+/**
  * Initialize the page on load.
  * @returns {void}
  */
 window.onload = function onLoad() {
+  if (!shouldAttemptEnvImport()) {
+    init({});
+    return;
+  }
   import('./.env.js')
     .then((module) => {
       const env = module?.ENV || {};
