@@ -1,6 +1,6 @@
 import { INTERESTS } from './interests.js';
 
-const VERSION = 'v0.0.12';
+const VERSION = 'v0.0.13';
 
 const CONFIG = {
   pubmedBaseUrl: 'https://pubmed.ncbi.nlm.nih.gov',
@@ -815,9 +815,10 @@ async function renderInterest(
 
     const papersFound = Number.isFinite(totalCount) ? totalCount : articles.length;
     const shouldUseOpenAlex = minCited > 0;
-    let summaryArticles = articles.slice(0, maxSummaryArticles);
+    const orderedArticles = shouldUseOpenAlex ? [...articles].reverse() : articles;
+    let summaryArticles = orderedArticles.slice(0, maxSummaryArticles);
     if (shouldUseOpenAlex) {
-      const withCounts = await attachCitedByCounts(articles);
+      const withCounts = await attachCitedByCounts(orderedArticles);
       summaryArticles = withCounts
         .filter((article) => (article.citedByCount ?? 0) >= minCited)
         .sort((a, b) => (b.citedByCount ?? 0) - (a.citedByCount ?? 0))
