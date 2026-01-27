@@ -732,6 +732,7 @@ window.onload = function onLoad() {
   );
   const model = getOptionalParam('model', CONFIG.openaiModel);
   const typeFilter = getOptionalParam('type', '').toLowerCase();
+  const queryOverride = getOptionalParam('query', '').trim();
 
   const status = document.getElementById('status');
   const results = document.getElementById('results');
@@ -748,7 +749,9 @@ window.onload = function onLoad() {
     status.innerHTML = '<span class="error">No interests match the requested type.</span>';
     return;
   }
-  const selected = pickRandomItems(filteredInterests, CONFIG.randomInterests);
+  const selected = queryOverride
+    ? [{ query: queryOverride, type: 'topic' }]
+    : pickRandomItems(filteredInterests, CONFIG.randomInterests);
   status.textContent = '';
 
   const tasks = selected.map((interest) =>
