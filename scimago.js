@@ -1,4 +1,4 @@
-// Scimago SJR mapping generated from scimagojr_2024.csv.
+// Scimago ISSN-SJR mapping generated from scimagojr_2024.csv.
 
 export const SCIMAGO_SJR = {
     "00010782": 1,
