@@ -9,7 +9,7 @@ const CONFIG = {
   openaiResponsesUrl: 'https://api.openai.com/v1/responses',
   openaiModel: 'gpt-5-mini',
   reasoningEffort: 'low',
-  maxRetrievalArticles: "d90",
+  interval: 'd90',
   maxSummaryArticles: 5,
   maxAbstractChars: 5000,
   maxOutputTokens: 5000
@@ -44,6 +44,23 @@ function getParamValue(param) {
   }
 
   return value;
+}
+
+/**
+ * Resolve an interval label from the URL.
+ * @returns {string}
+ */
+function resolveIntervalLabel() {
+  const interval = getQueryParam('interval');
+  if (interval) {
+    return interval.trim();
+  }
+  const days = getQueryParam('days');
+  const parsedDays = Number(days);
+  if (Number.isFinite(parsedDays) && parsedDays > 0) {
+    return `d${parsedDays}`;
+  }
+  return CONFIG.interval;
 }
 
 /**
@@ -123,8 +140,8 @@ function buildBiorxivUrl(doi, version) {
  * @param {string} category
  * @returns {Promise<object[]>}
  */
-async function fetchBiorxivArticles(category) {
-  const url = `${CONFIG.biorxivBaseUrl}/${CONFIG.maxRetrievalArticles}?category=${encodeURIComponent(category)}`;
+async function fetchBiorxivArticles(category, interval) {
+  const url = `${CONFIG.biorxivBaseUrl}/${interval}?category=${encodeURIComponent(category)}`;
   const data = await fetchJson(url);
   const collection = Array.isArray(data?.collection) ? data.collection : [];
   const normalizedCategory = normalizeCategory(category);
@@ -368,14 +385,21 @@ function appendMissingDois(paragraphs, missingDois) {
  * @param {number} papersSummarized
  * @returns {string}
  */
-function buildBibliographyHtml(doisInOrder, articlesByDoi, papersFound, papersSummarized) {
+function buildBibliographyHtml(
+  doisInOrder,
+  articlesByDoi,
+  papersFound,
+  papersSummarized,
+  intervalLabel
+) {
   if (!doisInOrder.length) {
     return '';
   }
   const foundCount = Number.isFinite(papersFound) ? papersFound : null;
   const summarizedCount = Number.isFinite(papersSummarized) ? papersSummarized : null;
+  const intervalSuffix = intervalLabel ? `; ${escapeHtml(intervalLabel)} interval` : '';
   const headingSuffix = (foundCount !== null && summarizedCount !== null)
-    ? ` (${foundCount} papers found; ${summarizedCount} summarized)`
+    ? ` (${foundCount} papers found; ${summarizedCount} summarized${intervalSuffix})`
     : '';
   const entries = doisInOrder
     .map((doi) => {
@@ -431,7 +455,14 @@ function buildBibliographyHtml(doisInOrder, articlesByDoi, papersFound, papersSu
  * @param {number} options.papersSummarized
  * @returns {Promise<string>}
  */
-async function buildGptSummary({ apiKey, category, articles, papersFound, papersSummarized }) {
+async function buildGptSummary({
+  apiKey,
+  category,
+  articles,
+  papersFound,
+  papersSummarized,
+  intervalLabel
+}) {
   if (!apiKey) {
     throw new Error('Missing OpenAI API key.');
   }
@@ -552,7 +583,8 @@ Rules:
     doisInOrder,
     articlesByDoi,
     papersFound,
-    papersSummarized
+    papersSummarized,
+    intervalLabel
   );
 
   return summaryHtml + bibliographyHtml;
@@ -567,6 +599,7 @@ async function init() {
   const apiKey = getParamValue('apikey');
   const status = document.getElementById('status');
   const resultsEl = document.getElementById('results');
+  const intervalLabel = resolveIntervalLabel();
 
   if (!apiKey) {
     status.innerHTML = '<span class="error">Missing apikey. Provide ?apikey=YOUR_KEY in the URL.</span>';
@@ -579,11 +612,23 @@ async function init() {
   const displayCategory = normalizeCategory(category);
 
   status.innerHTML = `<span>Loading bioRxiv category: <strong>${displayCategory}</strong>...</span>`;
+  resultsEl.innerHTML = '';
+  const section = document.createElement('section');
+  section.className = 'rssItem';
+  const heading = document.createElement('h2');
+  heading.textContent = `${displayCategory} (category)`;
+  section.appendChild(heading);
+  const desc = document.createElement('div');
+  desc.className = 'desc';
+  desc.innerHTML = '<p class="summary">Loading selection...</p>';
+  section.appendChild(desc);
+  resultsEl.appendChild(section);
 
   try {
-    const rawArticles = await fetchBiorxivArticles(category);
+    const rawArticles = await fetchBiorxivArticles(category, intervalLabel);
     if (!rawArticles.length) {
       status.innerHTML = '<span class="error">No articles found for this category.</span>';
+      desc.innerHTML = '<p class="summary">No articles found.</p>';
       return;
     }
 
@@ -601,24 +646,16 @@ async function init() {
       category: displayCategory,
       articles: topArticles,
       papersFound: rawArticles.length,
-      papersSummarized: topArticles.length
+      papersSummarized: topArticles.length,
+      intervalLabel
     });
-    resultsEl.innerHTML = '';
-    const section = document.createElement('section');
-    section.className = 'rssItem';
-    const heading = document.createElement('h2');
-    heading.textContent = `Category: ${displayCategory}`;
-    section.appendChild(heading);
-    const desc = document.createElement('div');
-    desc.className = 'desc';
     desc.innerHTML = summaryHtml;
-    section.appendChild(desc);
-    resultsEl.appendChild(section);
 
-    status.innerHTML = `<span>Retrieved ${rawArticles.length} articles; showing ${topArticles.length} from <strong>${displayCategory}</strong> for interval ${CONFIG.maxRetrievalArticles}.</span>`;
+    status.textContent = '';
   } catch (error) {
     console.error('ERROR:', error);
     status.innerHTML = `<span class="error">Error: ${error.message || 'Unknown error'}</span>`;
+    desc.innerHTML = `<p class="summary error">Error: ${escapeHtml(error.message || 'Unknown error')}</p>`;
   }
 }
 
