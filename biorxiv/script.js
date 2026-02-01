@@ -1,6 +1,6 @@
 import { CATEGORIES } from './category.js';
 
-const VERSION = 'v0.0.1';
+const VERSION = 'v0.0.2';
 
 const CONFIG = {
   biorxivBaseUrl: 'https://api.biorxiv.org/details/biorxiv',
@@ -620,7 +620,7 @@ async function init() {
   section.appendChild(heading);
   const desc = document.createElement('div');
   desc.className = 'desc';
-  desc.innerHTML = '<p class="summary">Loading selection...</p>';
+  desc.innerHTML = '<p class="summary">Loading summary...</p>';
   section.appendChild(desc);
   resultsEl.appendChild(section);
 
