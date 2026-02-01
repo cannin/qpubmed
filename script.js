@@ -1,7 +1,7 @@
 import { INTERESTS } from './interests.js';
 import { SCIMAGO_SJR } from './scimago.js';
 
-const VERSION = 'v0.0.24';
+const VERSION = 'v0.0.25';
 
 const CONFIG = {
   pubmedBaseUrl: 'https://pubmed.ncbi.nlm.nih.gov',
@@ -9,7 +9,7 @@ const CONFIG = {
   openAlexBaseUrl: 'https://api.openalex.org/works',
   openaiResponsesUrl: 'https://api.openai.com/v1/responses',
   openaiModel: 'gpt-5-mini',
-  reasoningEffort: 'minimal',
+  reasoningEffort: 'low',
   days: 30,
   maxSummaryArticles: 10,
   maxTopicSummaryArticles: 10,
