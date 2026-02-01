@@ -1,7 +1,7 @@
 import { INTERESTS } from './interests.js';
 import { SCIMAGO_SJR } from './scimago.js';
 
-const VERSION = 'v0.0.14';
+const VERSION = 'v0.0.15';
 
 const CONFIG = {
   pubmedBaseUrl: 'https://pubmed.ncbi.nlm.nih.gov',
