@@ -1,7 +1,7 @@
 import { INTERESTS } from './interests.js';
 import { SCIMAGO_SJR } from './scimago.js';
 
-const VERSION = 'v0.0.20';
+const VERSION = 'v0.0.21';
 
 const CONFIG = {
   pubmedBaseUrl: 'https://pubmed.ncbi.nlm.nih.gov',
@@ -9,6 +9,7 @@ const CONFIG = {
   openAlexBaseUrl: 'https://api.openalex.org/works',
   openaiResponsesUrl: 'https://api.openai.com/v1/responses',
   openaiModel: 'gpt-5-mini',
+  reasoningEffort: 'low',
   days: 30,
   maxSummaryArticles: 10,
   maxTopicSummaryArticles: 10,
@@ -653,6 +654,7 @@ function extractOutputText(responseJson) {
  * @param {number} options.papersFound
  * @param {number} options.papersSummarized
  * @param {string} options.model
+ * @param {string} options.reasoningEffort
  * @param {boolean} options.rankedByCitations
  * @returns {Promise<string>}
  */
@@ -664,6 +666,7 @@ async function buildGptSummary({
   papersFound,
   papersSummarized,
   model,
+  reasoningEffort,
   rankedByCitations
 }) {
   const papersForPrompt = articles.map((article) => {
@@ -733,6 +736,7 @@ ectopic pancreatic ACC emphasizes unusual presentations
   const body = {
     model,
     max_output_tokens: CONFIG.maxOutputTokens,
+    reasoning: { effort: reasoningEffort },
     input: [
       { role: 'system', content: [{ type: 'input_text', text: systemPrompt }] },
       { role: 'user', content: [{ type: 'input_text', text: userPrompt }] }
@@ -809,6 +813,7 @@ ectopic pancreatic ACC emphasizes unusual presentations
  * @param {number} maxRetrievalArticles
  * @param {number} minCited
  * @param {string} model
+ * @param {string} reasoningEffort
  * @param {HTMLElement} container
  * @returns {Promise<void>}
  */
@@ -820,6 +825,7 @@ async function renderInterest(
   maxRetrievalArticles,
   minCited,
   model,
+  reasoningEffort,
   container
 ) {
   const section = document.createElement('section');
@@ -895,6 +901,7 @@ async function renderInterest(
       papersFound,
       papersSummarized: summaryArticles.length,
       model,
+      reasoningEffort,
       rankedByCitations: shouldUseOpenAlex
     });
 
@@ -933,6 +940,7 @@ function init(env) {
   );
   const minCited = normalizeNumberParam(getOptionalParam('minCited', 0), 0, 0);
   const model = getOptionalParam('model', CONFIG.openaiModel);
+  const reasoningEffort = getOptionalParam('reasoningEffort', CONFIG.reasoningEffort);
   const typeFilter = getOptionalParam('type', '').toLowerCase();
   const queryOverride = getOptionalParam('query', '').trim();
 
@@ -966,6 +974,7 @@ function init(env) {
       maxRetrievalArticles,
       minCited,
       model,
+      reasoningEffort,
       results
     )
   );
