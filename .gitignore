@@ -181,3 +181,6 @@ prior_examples/
 tasks.md
 prompt.md
 scimagojr_2024.csv
+
+biorxiv_25.json
+openalex_authors.json
