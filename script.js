@@ -1,14 +1,14 @@
 import { INTERESTS } from './interests.js';
 import { SCIMAGO_SJR } from './scimago.js';
 
-const VERSION = 'v0.0.18';
+const VERSION = 'v0.0.19';
 
 const CONFIG = {
   pubmedBaseUrl: 'https://pubmed.ncbi.nlm.nih.gov',
   eutilsBaseUrl: 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils',
   openAlexBaseUrl: 'https://api.openalex.org/works',
   openaiResponsesUrl: 'https://api.openai.com/v1/responses',
-  openaiModel: 'gpt-5-nano',
+  openaiModel: 'gpt-5-mini',
   days: 30,
   maxSummaryArticles: 10,
   maxTopicSummaryArticles: 10,
