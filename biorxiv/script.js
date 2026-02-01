@@ -611,7 +611,7 @@ async function init() {
   const category = resolvedCategory || pickRandomCategory();
   const displayCategory = normalizeCategory(category);
 
-  status.innerHTML = `<span>Loading bioRxiv category: <strong>${displayCategory}</strong>...</span>`;
+  status.textContent = '';
   resultsEl.innerHTML = '';
   const section = document.createElement('section');
   section.className = 'rssItem';
