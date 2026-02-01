@@ -52,7 +52,11 @@ function getParamValue(param) {
  * @returns {string}
  */
 function normalizeCategory(value) {
-  return String(value || '').trim().toLowerCase();
+  return String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/_/g, ' ')
+    .replace(/\s+/g, ' ');
 }
 
 /**
@@ -65,6 +69,24 @@ function pickRandomCategory() {
   }
   const index = Math.floor(Math.random() * CATEGORIES.length);
   return CATEGORIES[index];
+}
+
+const CATEGORY_MAP = CATEGORIES.reduce((acc, category) => {
+  acc[normalizeCategory(category)] = category;
+  return acc;
+}, {});
+
+/**
+ * Resolve a requested category to the canonical API value.
+ * @param {string|null} requested
+ * @returns {string}
+ */
+function resolveCategory(requested) {
+  if (!requested) {
+    return '';
+  }
+  const normalized = normalizeCategory(requested);
+  return CATEGORY_MAP[normalized] || '';
 }
 
 /**
@@ -551,10 +573,12 @@ async function init() {
     return;
   }
 
-  const requestedCategory = normalizeCategory(getQueryParam('category'));
-  const category = CATEGORIES.includes(requestedCategory) ? requestedCategory : pickRandomCategory();
+  const requestedCategory = getQueryParam('category');
+  const resolvedCategory = resolveCategory(requestedCategory);
+  const category = resolvedCategory || pickRandomCategory();
+  const displayCategory = normalizeCategory(category);
 
-  status.innerHTML = `<span>Loading bioRxiv category: <strong>${category}</strong>...</span>`;
+  status.innerHTML = `<span>Loading bioRxiv category: <strong>${displayCategory}</strong>...</span>`;
 
   try {
     const rawArticles = await fetchBiorxivArticles(category);
@@ -574,7 +598,7 @@ async function init() {
 
     const summaryHtml = await buildGptSummary({
       apiKey,
-      category,
+      category: displayCategory,
       articles: topArticles,
       papersFound: rawArticles.length,
       papersSummarized: topArticles.length
@@ -583,7 +607,7 @@ async function init() {
     const section = document.createElement('section');
     section.className = 'rssItem';
     const heading = document.createElement('h2');
-    heading.textContent = `Category: ${category}`;
+    heading.textContent = `Category: ${displayCategory}`;
     section.appendChild(heading);
     const desc = document.createElement('div');
     desc.className = 'desc';
@@ -591,7 +615,7 @@ async function init() {
     section.appendChild(desc);
     resultsEl.appendChild(section);
 
-    status.innerHTML = `<span>Retrieved ${rawArticles.length} articles; showing ${topArticles.length} from <strong>${category}</strong> for interval ${CONFIG.maxRetrievalArticles}.</span>`;
+    status.innerHTML = `<span>Retrieved ${rawArticles.length} articles; showing ${topArticles.length} from <strong>${displayCategory}</strong> for interval ${CONFIG.maxRetrievalArticles}.</span>`;
   } catch (error) {
     console.error('ERROR:', error);
     status.innerHTML = `<span class="error">Error: ${error.message || 'Unknown error'}</span>`;
