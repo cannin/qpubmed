@@ -610,7 +610,6 @@ async function init() {
   const category = resolvedCategory || pickRandomCategory();
   const displayCategory = normalizeCategory(category);
 
-  status.textContent = '';
   resultsEl.innerHTML = '';
   const section = document.createElement('section');
   section.className = 'rssItem';
