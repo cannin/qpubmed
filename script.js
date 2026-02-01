@@ -8,7 +8,7 @@ const CONFIG = {
   eutilsBaseUrl: 'https://eutils.ncbi.nlm.nih.gov/entrez/eutils',
   openAlexBaseUrl: 'https://api.openalex.org/works',
   openaiResponsesUrl: 'https://api.openai.com/v1/responses',
-  openaiModel: 'gpt-5-mini',
+  openaiModel: 'gpt-5-nano',
   days: 30,
   maxSummaryArticles: 10,
   maxTopicSummaryArticles: 10,
