@@ -24,7 +24,7 @@ You can also copy `.env.js.example` to `.env.js` and set `OPENAI_API_KEY` for lo
 - `maxRetrievalArticles` (optional): Max PubMed articles retrieved per query (default: 25). Stored in `localStorage`.
 - `minCited` (optional): Minimum OpenAlex cited-by count required to summarize (default: 0).
 - `model` (optional): OpenAI model name (default: `gpt-5-mini`).
-- `reasoningEffort` (optional): OpenAI reasoning effort setting (default: `low`).
+- `reasoningEffort` (optional): OpenAI reasoning effort setting (default: `low`). Options: `minimal`, `low`, `medium`, `high`.
 
 ## Examples
 
