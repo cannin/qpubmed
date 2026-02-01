@@ -1,6 +1,6 @@
 import { CATEGORIES } from './category.js';
 
-const VERSION = 'v0.0.2';
+const VERSION = 'v0.0.3';
 
 const CONFIG = {
   biorxivBaseUrl: 'https://api.biorxiv.org/details/biorxiv',
@@ -597,12 +597,11 @@ Rules:
 async function init() {
   document.title = document.title.replace('$VERSION', VERSION);
   const apiKey = getParamValue('apikey');
-  const status = document.getElementById('status');
   const resultsEl = document.getElementById('results');
   const intervalLabel = resolveIntervalLabel();
 
   if (!apiKey) {
-    status.innerHTML = '<span class="error">Missing apikey. Provide ?apikey=YOUR_KEY in the URL.</span>';
+    resultsEl.innerHTML = '<p class="summary error">Missing apikey. Provide ?apikey=YOUR_KEY in the URL.</p>';
     return;
   }
 
@@ -627,7 +626,6 @@ async function init() {
   try {
     const rawArticles = await fetchBiorxivArticles(category, intervalLabel);
     if (!rawArticles.length) {
-      status.innerHTML = '<span class="error">No articles found for this category.</span>';
       desc.innerHTML = '<p class="summary">No articles found.</p>';
       return;
     }
@@ -651,10 +649,8 @@ async function init() {
     });
     desc.innerHTML = summaryHtml;
 
-    status.textContent = '';
   } catch (error) {
     console.error('ERROR:', error);
-    status.innerHTML = `<span class="error">Error: ${error.message || 'Unknown error'}</span>`;
     desc.innerHTML = `<p class="summary error">Error: ${escapeHtml(error.message || 'Unknown error')}</p>`;
   }
 }
