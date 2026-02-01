@@ -27,7 +27,6 @@ const INTERESTS = [
   { query: 'Nature', type: 'journal' },
   { query: 'Bioinformatics', type: 'journal' },
   { query: 'BMC Bioinformatics', type: 'journal' },
-  { query: 'BMC Syst Biol', type: 'journal' },
   { query: 'Cancer', type: 'journal' },
   { query: 'Cancer Cell', type: 'journal' },
   { query: 'Cancer Res', type: 'journal' },
