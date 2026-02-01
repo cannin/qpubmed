@@ -1,7 +1,7 @@
 import { INTERESTS } from './interests.js';
 import { SCIMAGO_SJR } from './scimago.js';
 
-const VERSION = 'v0.0.19';
+const VERSION = 'v0.0.20';
 
 const CONFIG = {
   pubmedBaseUrl: 'https://pubmed.ncbi.nlm.nih.gov',
@@ -737,7 +737,8 @@ ectopic pancreatic ACC emphasizes unusual presentations
       { role: 'system', content: [{ type: 'input_text', text: systemPrompt }] },
       { role: 'user', content: [{ type: 'input_text', text: userPrompt }] }
     ],
-    text: { verbosity: 'low' }
+    text: { verbosity: 'low' },
+    reasoning: { effort: 'minimal' }
   };
 
   const response = await fetch(CONFIG.openaiResponsesUrl, {
