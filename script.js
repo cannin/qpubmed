@@ -1,4 +1,5 @@
 import { INTERESTS } from './interests.js';
+import { SCIMAGO_SJR } from './scimago.js';
 
 const VERSION = 'v0.0.14';
 
@@ -10,6 +11,7 @@ const CONFIG = {
   openaiModel: 'gpt-5-mini',
   days: 30,
   maxSummaryArticles: 10,
+  maxTopicSummaryArticles: 10,
   maxRetrievalArticles: 25,
   randomInterests: 1,
   maxAbstractChars: 5000,
@@ -290,9 +292,52 @@ function parseAuthors(articleNode) {
 }
 
 /**
+ * Normalize an ISSN for SJR lookup.
+ * @param {string} value
+ * @returns {string}
+ */
+function normalizeIssn(value) {
+  return String(value || '')
+    .replace(/-/g, '')
+    .replace(/\s+/g, '')
+    .toUpperCase();
+}
+
+/**
+ * Extract ISSNs from a PubMed article node.
+ * @param {Element} articleNode
+ * @returns {string[]}
+ */
+function extractIssns(articleNode) {
+  const issnNodes = Array.from(
+    articleNode.querySelectorAll('Journal > ISSN, MedlineJournalInfo > ISSNLinking')
+  );
+  const issns = issnNodes
+    .map((node) => normalizeIssn(node.textContent || ''))
+    .filter(Boolean);
+  return Array.from(new Set(issns));
+}
+
+/**
+ * Resolve the maximum SJR value for a list of ISSNs.
+ * @param {string[]} issns
+ * @returns {number}
+ */
+function getMaxSjr(issns) {
+  let maxValue = 0;
+  issns.forEach((issn) => {
+    const value = SCIMAGO_SJR[issn];
+    if (Number.isFinite(value) && value > maxValue) {
+      maxValue = value;
+    }
+  });
+  return maxValue;
+}
+
+/**
  * Parse a PubMed XML article into a normalized object.
  * @param {Element} articleNode
- * @returns {{pmid: string, title: string, journal: string, abstract: string, authors: string, pubDate: string, pubmedUrl: string}}
+ * @returns {{pmid: string, title: string, journal: string, abstract: string, authors: string, pubDate: string, issns: string[], sjr: number, pubmedUrl: string}}
  */
 function parsePubmedArticle(articleNode) {
   const pmid = articleNode.querySelector('PMID')?.textContent?.trim() || '';
@@ -304,6 +349,8 @@ function parsePubmedArticle(articleNode) {
   const abstract = abstractParts.join(' ');
   const authors = parseAuthors(articleNode);
   const pubDate = parsePubDate(articleNode);
+  const issns = extractIssns(articleNode);
+  const sjr = getMaxSjr(issns);
 
   return {
     pmid,
@@ -312,6 +359,8 @@ function parsePubmedArticle(articleNode) {
     abstract,
     authors,
     pubDate,
+    issns,
+    sjr,
     pubmedUrl: pmid ? `${CONFIG.pubmedBaseUrl}/${pmid}/` : ''
   };
 }
@@ -321,7 +370,7 @@ function parsePubmedArticle(articleNode) {
  * @param {{query: string, type: string}} interest
  * @param {number} days
  * @param {number} maxRetrievalArticles
- * @returns {Promise<{articles: Array<{pmid: string, title: string, journal: string, abstract: string, authors: string, pubDate: string, pubmedUrl: string}>, pubmedQuery: string, dateRange: {range: string, start: Date, end: Date}, searchLink: string, totalCount: number}>}
+ * @returns {Promise<{articles: Array<{pmid: string, title: string, journal: string, abstract: string, authors: string, pubDate: string, issns: string[], sjr: number, pubmedUrl: string}>, pubmedQuery: string, dateRange: {range: string, start: Date, end: Date}, searchLink: string, totalCount: number}>}
  */
 async function fetchPubmedArticles(interest, days, maxRetrievalArticles) {
   const pubmedQuery = buildPubmedQuery(interest);
@@ -600,7 +649,7 @@ function extractOutputText(responseJson) {
  * @param {string} options.apiKey
  * @param {string} options.query
  * @param {number} options.days
- * @param {Array<{pmid: string, title: string, journal: string, abstract: string, authors: string, pubDate: string, pubmedUrl: string}>} options.articles
+ * @param {Array<{pmid: string, title: string, journal: string, abstract: string, authors: string, pubDate: string, issns: string[], sjr: number, pubmedUrl: string}>} options.articles
  * @param {number} options.papersFound
  * @param {number} options.papersSummarized
  * @param {string} options.model
@@ -814,18 +863,26 @@ async function renderInterest(
     }
 
     const papersFound = Number.isFinite(totalCount) ? totalCount : articles.length;
-    const shouldUseOpenAlex = minCited > 0;
-    const orderedArticles = shouldUseOpenAlex ? [...articles].reverse() : articles;
-    let summaryArticles = orderedArticles.slice(0, maxSummaryArticles);
-    if (shouldUseOpenAlex) {
-      const withCounts = await attachCitedByCounts(orderedArticles);
-      summaryArticles = withCounts
-        .filter((article) => (article.citedByCount ?? 0) >= minCited)
-        .sort((a, b) => (b.citedByCount ?? 0) - (a.citedByCount ?? 0))
-        .slice(0, maxSummaryArticles);
-      if (!summaryArticles.length) {
-        desc.innerHTML = `<p class="summary">No articles met the minimum citation count (${minCited}).</p>`;
-        return;
+    const isTopicQuery = interest.type === 'topic';
+    const shouldUseOpenAlex = !isTopicQuery && minCited > 0;
+    let summaryArticles = [];
+
+    if (isTopicQuery) {
+      const sortedBySjr = [...articles].sort((a, b) => (b.sjr ?? 0) - (a.sjr ?? 0));
+      summaryArticles = sortedBySjr.slice(0, CONFIG.maxTopicSummaryArticles);
+    } else {
+      const orderedArticles = shouldUseOpenAlex ? [...articles].reverse() : articles;
+      summaryArticles = orderedArticles.slice(0, maxSummaryArticles);
+      if (shouldUseOpenAlex) {
+        const withCounts = await attachCitedByCounts(orderedArticles);
+        summaryArticles = withCounts
+          .filter((article) => (article.citedByCount ?? 0) >= minCited)
+          .sort((a, b) => (b.citedByCount ?? 0) - (a.citedByCount ?? 0))
+          .slice(0, maxSummaryArticles);
+        if (!summaryArticles.length) {
+          desc.innerHTML = `<p class="summary">No articles met the minimum citation count (${minCited}).</p>`;
+          return;
+        }
       }
     }
 
