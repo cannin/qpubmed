@@ -1,7 +1,7 @@
 import { INTERESTS } from './interests.js';
 import { SCIMAGO_SJR } from './scimago.js';
 
-const VERSION = 'v0.0.15';
+const VERSION = 'v0.0.16';
 
 const CONFIG = {
   pubmedBaseUrl: 'https://pubmed.ncbi.nlm.nih.gov',
@@ -326,8 +326,8 @@ function extractIssns(articleNode) {
 function getMaxSjr(issns) {
   let maxValue = 0;
   issns.forEach((issn) => {
-    const value = SCIMAGO_SJR[issn];
-    if (Number.isFinite(value) && value > maxValue) {
+    const value = Number.isFinite(SCIMAGO_SJR[issn]) ? SCIMAGO_SJR[issn] : 0;
+    if (value > maxValue) {
       maxValue = value;
     }
   });
