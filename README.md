@@ -1,4 +1,4 @@
-# PubMed Summaries
+# qpubmed (Quick Pubmed)
 
 Client-side PubMed summarizer that queries recent articles and generates a brief summary with PMID citations.
 
