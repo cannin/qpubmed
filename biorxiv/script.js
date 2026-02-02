@@ -522,9 +522,8 @@ function buildBibliographyHtml(
   }
   const foundCount = Number.isFinite(papersFound) ? papersFound : null;
   const summarizedCount = Number.isFinite(papersSummarized) ? papersSummarized : null;
-  const intervalSuffix = intervalLabel ? `; ${escapeHtml(intervalLabel)} interval` : '';
   const headingSuffix = (foundCount !== null && summarizedCount !== null)
-    ? ` (${foundCount} papers found; ${summarizedCount} summarized${intervalSuffix})`
+    ? ` (${foundCount} papers found; ${summarizedCount} summarized)`
     : '';
   const entries = doisInOrder
     .map((doi) => {
