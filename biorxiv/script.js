@@ -1,6 +1,6 @@
 import { CATEGORIES } from './category.js';
 
-const VERSION = 'v0.1.9';
+const VERSION = 'v0.1.10';
 
 const CONFIG = {
   biorxivBaseUrl: 'https://api.biorxiv.org/details/biorxiv',
@@ -12,7 +12,7 @@ const CONFIG = {
   reasoningEffort: 'low',
   maxBiorxivArticles: 25,
   maxOpenAlexArticles: 25,
-  maxSummaryArticles: 10,
+  maxSummaryArticles: 5,
   maxAbstractChars: 5000,
   maxOutputTokens: 5000
 };
