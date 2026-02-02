@@ -1,6 +1,6 @@
 import { CATEGORIES } from './category.js';
 
-const VERSION = 'v0.1.7';
+const VERSION = 'v0.1.8';
 
 const CONFIG = {
   biorxivBaseUrl: 'https://api.biorxiv.org/details/biorxiv',
@@ -10,7 +10,7 @@ const CONFIG = {
   openaiResponsesUrl: 'https://api.openai.com/v1/responses',
   openaiModel: 'gpt-5-mini',
   reasoningEffort: 'low',
-  maxBiorxivArticles: 20,
+  maxBiorxivArticles: 25,
   maxOpenAlexArticles: 25,
   maxSummaryArticles: 5,
   maxAbstractChars: 5000,
