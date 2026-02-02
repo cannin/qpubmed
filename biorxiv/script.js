@@ -1,6 +1,6 @@
 import { CATEGORIES } from './category.js';
 
-const VERSION = 'v0.1.10';
+const VERSION = 'v0.1.11';
 
 const CONFIG = {
   biorxivBaseUrl: 'https://api.biorxiv.org/details/biorxiv',
@@ -433,6 +433,18 @@ function normalizeSummaryParagraphs(text) {
 }
 
 /**
+ * Shorten DOI labels in summary anchors for display.
+ * @param {string} html
+ * @returns {string}
+ */
+function shortenSummaryDoiLabels(html) {
+  return html.replace(
+    /(<a[^>]*>\s*DOI:\s*)(10\.64898\/)([^<]+<\/a>)/gi,
+    '$1$3'
+  );
+}
+
+/**
  * Build a DOI anchor link.
  * @param {string} doi
  * @param {string|number} version
@@ -693,6 +705,7 @@ Rules:
     .filter((paragraph) => paragraph.trim())
     .map((paragraph) => `<p class="summary">${paragraph}</p>`)
     .join('');
+  const displaySummaryHtml = shortenSummaryDoiLabels(summaryHtml);
 
   const doisInOrder = extractDois(finalParagraphs.join(' '));
   const articlesByDoi = articles.reduce((acc, article) => {
@@ -711,7 +724,7 @@ Rules:
     intervalLabel
   );
 
-  return summaryHtml + bibliographyHtml;
+  return displaySummaryHtml + bibliographyHtml;
 }
 
 /**
