@@ -1,6 +1,6 @@
 import { CATEGORIES } from './category.js';
 
-const VERSION = 'v0.1.0';
+const VERSION = 'v0.1.2';
 
 const CONFIG = {
   biorxivBaseUrl: 'https://api.biorxiv.org/details/biorxiv',
@@ -46,6 +46,30 @@ function getParamValue(param) {
   }
 
   return value;
+}
+
+/**
+ * Resolve an optional param from the URL or localStorage with a fallback value.
+ * @param {string} param
+ * @param {string} fallback
+ * @returns {string}
+ */
+/**
+ * Build a CORS-proxied URL when a proxy is provided.
+ * @param {string|null} corsProxy
+ * @param {string} targetUrl
+ * @returns {string}
+ */
+function buildCorsProxyUrl(corsProxy, targetUrl) {
+  if (!corsProxy) {
+    return targetUrl;
+  }
+  const trimmed = corsProxy.trim();
+  if (!trimmed) {
+    return targetUrl;
+  }
+  const separator = trimmed.includes('?') ? '&' : '?';
+  return `${trimmed}${separator}url=${encodeURIComponent(targetUrl)}`;
 }
 
 /**
@@ -172,9 +196,10 @@ function encodeDoiPath(doi) {
  * @param {number} maxArticles
  * @returns {Promise<object[]>}
  */
-async function fetchBiorxivRssArticles(category, maxArticles) {
+async function fetchBiorxivRssArticles(category, maxArticles, corsProxy) {
   const params = new URLSearchParams({ subject: category });
-  const url = `${CONFIG.biorxivRssBaseUrl}?${params.toString()}`;
+  const rssUrl = `${CONFIG.biorxivRssBaseUrl}?${params.toString()}`;
+  const url = buildCorsProxyUrl(corsProxy, rssUrl);
   const xml = await fetchXml(url);
   const items = Array.from(xml.getElementsByTagName('item'));
   return items
@@ -685,6 +710,7 @@ async function init() {
   const apiKey = getParamValue('apikey');
   const resultsEl = document.getElementById('results');
   const maxBiorxivArticles = resolveMaxBiorxivArticles();
+  const corsProxy = getParamValue('corsProxy');
 
   if (!apiKey) {
     resultsEl.innerHTML = '<p class="summary error">Missing apikey. Provide ?apikey=YOUR_KEY in the URL.</p>';
@@ -712,7 +738,7 @@ async function init() {
   resultsEl.appendChild(section);
 
   try {
-    const rssArticles = await fetchBiorxivRssArticles(displayCategory, maxBiorxivArticles);
+    const rssArticles = await fetchBiorxivRssArticles(displayCategory, maxBiorxivArticles, corsProxy);
     if (!rssArticles.length) {
       desc.innerHTML = '<p class="summary">No articles found.</p>';
       return;
