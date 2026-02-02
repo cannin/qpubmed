@@ -1,16 +1,16 @@
 import { CATEGORIES } from './category.js';
 
-const VERSION = 'v0.0.5';
+const VERSION = 'v0.1.0';
 
-// Max retrieval is 100 entries
 const CONFIG = {
   biorxivBaseUrl: 'https://api.biorxiv.org/details/biorxiv',
+  biorxivRssBaseUrl: 'https://connect.biorxiv.org/biorxiv_xml.php',
   biorxivWebBaseUrl: 'https://www.biorxiv.org/content',
   openAlexAuthorsUrl: 'https://api.openalex.org/authors',
   openaiResponsesUrl: 'https://api.openai.com/v1/responses',
   openaiModel: 'gpt-5-mini',
   reasoningEffort: 'low',
-  interval: '100',
+  maxBiorxivArticles: 20,
   maxOpenAlexArticles: 25,
   maxSummaryArticles: 5,
   maxAbstractChars: 5000,
@@ -49,20 +49,16 @@ function getParamValue(param) {
 }
 
 /**
- * Resolve an interval label from the URL.
- * @returns {string}
+ * Resolve a maximum RSS article count from the URL.
+ * @returns {number}
  */
-function resolveIntervalLabel() {
-  const interval = getQueryParam('interval');
-  if (interval) {
-    return interval.trim();
+function resolveMaxBiorxivArticles() {
+  const value = getQueryParam('maxBiorxivArticles');
+  const parsed = Number(value);
+  if (Number.isFinite(parsed) && parsed > 0) {
+    return Math.floor(parsed);
   }
-  const days = getQueryParam('days');
-  const parsedDays = Number(days);
-  if (Number.isFinite(parsedDays) && parsedDays > 0) {
-    return `d${parsedDays}`;
-  }
-  return CONFIG.interval;
+  return CONFIG.maxBiorxivArticles;
 }
 
 /**
@@ -131,6 +127,21 @@ async function fetchJson(url) {
 }
 
 /**
+ * Fetch XML with basic error handling.
+ * @param {string} url
+ * @returns {Promise<Document>}
+ */
+async function fetchXml(url) {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`HTTP error: ${response.status}`);
+  }
+  const text = await response.text();
+  const parser = new DOMParser();
+  return parser.parseFromString(text, 'application/xml');
+}
+
+/**
  * Build a bioRxiv content URL from DOI and version.
  * @param {string} doi
  * @param {string|number} version
@@ -147,23 +158,83 @@ function buildBiorxivUrl(doi, version) {
 }
 
 /**
- * Fetch bioRxiv articles for a category.
+ * Encode a DOI for use in a URL path without escaping slashes.
+ * @param {string} doi
+ * @returns {string}
+ */
+function encodeDoiPath(doi) {
+  return encodeURIComponent(doi).replace(/%2F/g, '/');
+}
+
+/**
+ * Fetch bioRxiv RSS articles for a subject.
  * @param {string} category
+ * @param {number} maxArticles
  * @returns {Promise<object[]>}
  */
-async function fetchBiorxivArticles(category, interval) {
-  const params = category ? `?category=${encodeURIComponent(category)}` : '';
-  const url = `${CONFIG.biorxivBaseUrl}/${interval}${params}`;
+async function fetchBiorxivRssArticles(category, maxArticles) {
+  const params = new URLSearchParams({ subject: category });
+  const url = `${CONFIG.biorxivRssBaseUrl}?${params.toString()}`;
+  const xml = await fetchXml(url);
+  const items = Array.from(xml.getElementsByTagName('item'));
+  return items
+    .slice(0, maxArticles)
+    .map((item) => {
+      const titleNode = item.querySelector('dc\\:title') || item.querySelector('title');
+      const descNode = item.querySelector('description');
+      const dateNode = item.querySelector('dc\\:date') || item.querySelector('prism\\:publicationDate');
+      const idNode = item.querySelector('dc\\:identifier');
+      const doiValue = normalizeDoi(
+        String(idNode?.textContent || '')
+          .replace(/^doi:/i, '')
+          .trim()
+      );
+      return {
+        title: titleNode?.textContent?.trim() || '',
+        abstract: descNode?.textContent?.trim() || '',
+        date: dateNode?.textContent?.trim() || '',
+        doi: doiValue
+      };
+    })
+    .filter((item) => item.doi && item.title && item.abstract);
+}
+
+/**
+ * Fetch bioRxiv API details for a DOI.
+ * @param {string} doi
+ * @returns {Promise<object|null>}
+ */
+async function fetchBiorxivDetailsByDoi(doi) {
+  const normalizedDoi = normalizeDoi(doi);
+  if (!normalizedDoi) {
+    return null;
+  }
+  const url = `${CONFIG.biorxivBaseUrl}/${encodeDoiPath(normalizedDoi)}`;
   const data = await fetchJson(url);
   const collection = Array.isArray(data?.collection) ? data.collection : [];
-  if (!category) {
-    return collection.filter((item) => item?.title && item?.abstract);
-  }
-  const normalizedCategory = normalizeCategory(category);
-  return collection.filter((item) => {
-    const itemCategory = normalizeCategory(item?.category);
-    return item?.title && item?.abstract && itemCategory === normalizedCategory;
+  return collection.length ? collection[0] : null;
+}
+
+/**
+ * Attach bioRxiv API details to RSS articles.
+ * @param {object[]} articles
+ * @param {string} displayCategory
+ * @returns {Promise<object[]>}
+ */
+async function attachBiorxivDetails(articles, displayCategory) {
+  const tasks = articles.map(async (article) => {
+    const details = await fetchBiorxivDetailsByDoi(article.doi);
+    return {
+      ...details,
+      ...article,
+      doi: article.doi,
+      title: article.title || details?.title || '',
+      abstract: article.abstract || details?.abstract || '',
+      date: article.date || details?.date || '',
+      category: details?.category || displayCategory
+    };
   });
+  return Promise.all(tasks);
 }
 
 const openAlexCache = new Map();
@@ -613,7 +684,7 @@ async function init() {
   document.title = document.title.replace('$VERSION', VERSION);
   const apiKey = getParamValue('apikey');
   const resultsEl = document.getElementById('results');
-  const intervalLabel = resolveIntervalLabel();
+  const maxBiorxivArticles = resolveMaxBiorxivArticles();
 
   if (!apiKey) {
     resultsEl.innerHTML = '<p class="summary error">Missing apikey. Provide ?apikey=YOUR_KEY in the URL.</p>';
@@ -641,13 +712,14 @@ async function init() {
   resultsEl.appendChild(section);
 
   try {
-    const rawArticles = await fetchBiorxivArticles(category, intervalLabel);
-    if (!rawArticles.length) {
+    const rssArticles = await fetchBiorxivRssArticles(displayCategory, maxBiorxivArticles);
+    if (!rssArticles.length) {
       desc.innerHTML = '<p class="summary">No articles found.</p>';
       return;
     }
 
-    const openAlexCandidates = rawArticles.slice(0, CONFIG.maxOpenAlexArticles);
+    const detailedArticles = await attachBiorxivDetails(rssArticles, displayCategory);
+    const openAlexCandidates = detailedArticles.slice(0, CONFIG.maxOpenAlexArticles);
     const withStats = await attachAuthorStats(openAlexCandidates);
     const topArticles = [...withStats]
       .sort((a, b) => {
@@ -661,9 +733,9 @@ async function init() {
       apiKey,
       category: displayCategory,
       articles: topArticles,
-      papersFound: rawArticles.length,
+      papersFound: rssArticles.length,
       papersSummarized: topArticles.length,
-      intervalLabel
+      intervalLabel: String(maxBiorxivArticles)
     });
     desc.innerHTML = summaryHtml;
 
