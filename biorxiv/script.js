@@ -1,6 +1,6 @@
 import { CATEGORIES } from './category.js';
 
-const VERSION = 'v0.1.5';
+const VERSION = 'v0.1.6';
 
 const CONFIG = {
   biorxivBaseUrl: 'https://api.biorxiv.org/details/biorxiv',
