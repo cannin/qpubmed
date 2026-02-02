@@ -2,7 +2,7 @@ import { CATEGORIES } from './category.js';
 
 const VERSION = 'v0.0.5';
 
-// Max interval value if numeric is 100
+// Max retrieval is 100 entries
 const CONFIG = {
   biorxivBaseUrl: 'https://api.biorxiv.org/details/biorxiv',
   biorxivWebBaseUrl: 'https://www.biorxiv.org/content',
@@ -10,7 +10,7 @@ const CONFIG = {
   openaiResponsesUrl: 'https://api.openai.com/v1/responses',
   openaiModel: 'gpt-5-mini',
   reasoningEffort: 'low',
-  interval: 'd90',
+  interval: '100',
   maxOpenAlexArticles: 25,
   maxSummaryArticles: 5,
   maxAbstractChars: 5000,
