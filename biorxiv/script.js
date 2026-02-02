@@ -79,6 +79,15 @@ function normalizeCategory(value) {
 }
 
 /**
+ * Check whether a requested category should include all.
+ * @param {string|null} value
+ * @returns {boolean}
+ */
+function isAllCategory(value) {
+  return normalizeCategory(value) === 'all';
+}
+
+/**
  * Select a random category without mutating the array.
  * @returns {string}
  */
@@ -143,9 +152,13 @@ function buildBiorxivUrl(doi, version) {
  * @returns {Promise<object[]>}
  */
 async function fetchBiorxivArticles(category, interval) {
-  const url = `${CONFIG.biorxivBaseUrl}/${interval}?category=${encodeURIComponent(category)}`;
+  const params = category ? `?category=${encodeURIComponent(category)}` : '';
+  const url = `${CONFIG.biorxivBaseUrl}/${interval}${params}`;
   const data = await fetchJson(url);
   const collection = Array.isArray(data?.collection) ? data.collection : [];
+  if (!category) {
+    return collection.filter((item) => item?.title && item?.abstract);
+  }
   const normalizedCategory = normalizeCategory(category);
   return collection.filter((item) => {
     const itemCategory = normalizeCategory(item?.category);
@@ -608,9 +621,10 @@ async function init() {
   }
 
   const requestedCategory = getQueryParam('category');
-  const resolvedCategory = resolveCategory(requestedCategory);
-  const category = resolvedCategory || pickRandomCategory();
-  const displayCategory = normalizeCategory(category);
+  const requestedIsAll = isAllCategory(requestedCategory);
+  const resolvedCategory = requestedIsAll ? '' : resolveCategory(requestedCategory);
+  const category = requestedIsAll ? '' : (resolvedCategory || pickRandomCategory());
+  const displayCategory = requestedIsAll ? 'all' : normalizeCategory(category);
 
   resultsEl.innerHTML = '';
   const section = document.createElement('section');
