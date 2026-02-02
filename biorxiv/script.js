@@ -1,6 +1,6 @@
 import { CATEGORIES } from './category.js';
 
-const VERSION = 'v0.0.4';
+const VERSION = 'v0.0.5';
 
 // Max interval value if numeric is 100
 const CONFIG = {
@@ -623,8 +623,10 @@ async function init() {
   const requestedCategory = getQueryParam('category');
   const requestedIsAll = isAllCategory(requestedCategory);
   const resolvedCategory = requestedIsAll ? '' : resolveCategory(requestedCategory);
-  const category = requestedIsAll ? '' : (resolvedCategory || pickRandomCategory());
-  const displayCategory = requestedIsAll ? 'all' : normalizeCategory(category);
+  const selectedCategory = resolvedCategory || pickRandomCategory();
+  const isAllSelection = requestedIsAll || isAllCategory(selectedCategory);
+  const category = isAllSelection ? '' : selectedCategory;
+  const displayCategory = isAllSelection ? 'all' : normalizeCategory(category);
 
   resultsEl.innerHTML = '';
   const section = document.createElement('section');
