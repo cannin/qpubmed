@@ -1,6 +1,6 @@
 import { CATEGORIES } from './category.js';
 
-const VERSION = 'v0.1.4';
+const VERSION = 'v0.1.5';
 
 const CONFIG = {
   biorxivBaseUrl: 'https://api.biorxiv.org/details/biorxiv',
@@ -196,22 +196,41 @@ async function fetchBiorxivRssArticles(category, maxArticles, corsProxy) {
   const url = buildCorsProxyUrl(corsProxy, rssUrl);
   const xml = await fetchXml(url);
   const items = Array.from(xml.getElementsByTagName('item'));
+
+  const getFirstText = (node, tagNames) => {
+    for (const tagName of tagNames) {
+      const matches = node.getElementsByTagName(tagName);
+      if (matches && matches.length) {
+        return matches[0].textContent || '';
+      }
+    }
+    for (const tagName of tagNames) {
+      const selected = node.querySelector(tagName);
+      if (selected && selected.textContent) {
+        return selected.textContent;
+      }
+    }
+    return '';
+  };
+
+  const extractDoiFromLink = (linkValue) => {
+    const match = String(linkValue || '').match(/10\.\d{4,9}\/[^\s?]+/i);
+    return match ? normalizeDoi(match[0]) : '';
+  };
+
   return items
     .slice(0, maxArticles)
     .map((item) => {
-      const titleNode = item.querySelector('dc\\:title') || item.querySelector('title');
-      const descNode = item.querySelector('description');
-      const dateNode = item.querySelector('dc\\:date') || item.querySelector('prism\\:publicationDate');
-      const idNode = item.querySelector('dc\\:identifier');
-      const doiValue = normalizeDoi(
-        String(idNode?.textContent || '')
-          .replace(/^doi:/i, '')
-          .trim()
-      );
+      const titleValue = getFirstText(item, ['dc:title', 'title']);
+      const descValue = getFirstText(item, ['description', 'content:encoded']);
+      const dateValue = getFirstText(item, ['dc:date', 'prism:publicationDate']);
+      const idValue = getFirstText(item, ['dc:identifier']);
+      const linkValue = getFirstText(item, ['link']);
+      const doiValue = normalizeDoi(idValue) || extractDoiFromLink(linkValue);
       return {
-        title: titleNode?.textContent?.trim() || '',
-        abstract: descNode?.textContent?.trim() || '',
-        date: dateNode?.textContent?.trim() || '',
+        title: titleValue.trim(),
+        abstract: descValue.trim(),
+        date: dateValue.trim(),
         doi: doiValue
       };
     })
@@ -360,6 +379,7 @@ function extractOutputText(responseJson) {
 function normalizeDoi(doi) {
   return String(doi || '')
     .trim()
+    .replace(/^doi:/i, '')
     .replace(/[\"'>]+$/g, '')
     .replace(/[).,;]+$/g, '')
     .replace(/v\d+$/i, '');
