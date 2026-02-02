@@ -61,12 +61,9 @@ function getParamValue(param) {
  * @returns {string}
  */
 function buildCorsProxyUrl(corsProxy, targetUrl) {
-  if (!corsProxy) {
-    return targetUrl;
-  }
   const trimmed = corsProxy.trim();
   if (!trimmed) {
-    return targetUrl;
+    throw new Error('Missing corsProxy. Provide ?corsProxy=YOUR_PROXY in the URL.');
   }
   const separator = trimmed.includes('?') ? '&' : '?';
   return `${trimmed}${separator}url=${encodeURIComponent(targetUrl)}`;
@@ -197,6 +194,9 @@ function encodeDoiPath(doi) {
  * @returns {Promise<object[]>}
  */
 async function fetchBiorxivRssArticles(category, maxArticles, corsProxy) {
+  if (!corsProxy) {
+    throw new Error('Missing corsProxy. Provide ?corsProxy=YOUR_PROXY in the URL.');
+  }
   const params = new URLSearchParams({ subject: category });
   const rssUrl = `${CONFIG.biorxivRssBaseUrl}?${params.toString()}`;
   const url = buildCorsProxyUrl(corsProxy, rssUrl);
