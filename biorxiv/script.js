@@ -1,6 +1,6 @@
 import { CATEGORIES } from './category.js';
 
-const VERSION = 'v0.1.6';
+const VERSION = 'v0.1.7';
 
 const CONFIG = {
   biorxivBaseUrl: 'https://api.biorxiv.org/details/biorxiv',
@@ -777,6 +777,15 @@ async function init() {
       intervalLabel: String(maxBiorxivArticles)
     });
     desc.innerHTML = summaryHtml;
+    const rssLink = `${CONFIG.biorxivRssBaseUrl}?subject=${encodeURIComponent(displayCategory)}`;
+    const rssLinkEl = document.createElement('a');
+    rssLinkEl.href = rssLink;
+    rssLinkEl.target = '_blank';
+    rssLinkEl.rel = 'noopener';
+    rssLinkEl.textContent = 'Open bioRxiv RSS';
+    const rssWrap = document.createElement('p');
+    rssWrap.appendChild(rssLinkEl);
+    desc.appendChild(rssWrap);
 
   } catch (error) {
     console.error('ERROR:', error);
