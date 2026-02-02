@@ -613,7 +613,7 @@ Rules:
 - Do not put all citations after a single sentence; spread them across sentences.
 - Sentences should cite a maximum of 4 DOIs; more than 4 DOIs split into other sentences.
 - The majority of sentences should cite at least 2 DOIs.
-- Total length under 220 words.
+- Total length under 500 words.
 - Cite EVERY paper at least once using inline citations at sentence ends.
 - Sentences should never be composed of only citations.
 - Use base DOIs only; strip any trailing version markers like v1, v2 from the DOI label text.
