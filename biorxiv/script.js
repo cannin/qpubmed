@@ -2,6 +2,7 @@ import { CATEGORIES } from './category.js';
 
 const VERSION = 'v0.0.3';
 
+// Max interval value if numeric is 100
 const CONFIG = {
   biorxivBaseUrl: 'https://api.biorxiv.org/details/biorxiv',
   biorxivWebBaseUrl: 'https://www.biorxiv.org/content',
@@ -10,6 +11,7 @@ const CONFIG = {
   openaiModel: 'gpt-5-mini',
   reasoningEffort: 'low',
   interval: 'd90',
+  maxOpenAlexArticles: 25,
   maxSummaryArticles: 5,
   maxAbstractChars: 5000,
   maxOutputTokens: 5000
@@ -629,7 +631,8 @@ async function init() {
       return;
     }
 
-    const withStats = await attachAuthorStats(rawArticles);
+    const openAlexCandidates = rawArticles.slice(0, CONFIG.maxOpenAlexArticles);
+    const withStats = await attachAuthorStats(openAlexCandidates);
     const topArticles = [...withStats]
       .sort((a, b) => {
         const aValue = a?.corresponding_author_stats?.meanCitedness ?? 0;

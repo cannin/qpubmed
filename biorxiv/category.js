@@ -1,4 +1,5 @@
 export const CATEGORIES = [
+  'all',
   'biochemistry',
   'bioengineering',
   'bioinformatics',
