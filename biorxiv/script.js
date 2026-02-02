@@ -1,6 +1,6 @@
 import { CATEGORIES } from './category.js';
 
-const VERSION = 'v0.1.3';
+const VERSION = 'v0.1.4';
 
 const CONFIG = {
   biorxivBaseUrl: 'https://api.biorxiv.org/details/biorxiv',
@@ -48,12 +48,6 @@ function getParamValue(param) {
   return value;
 }
 
-/**
- * Resolve an optional param from the URL or localStorage with a fallback value.
- * @param {string} param
- * @param {string} fallback
- * @returns {string}
- */
 /**
  * Build a CORS-proxied URL when a proxy is provided.
  * @param {string|null} corsProxy
