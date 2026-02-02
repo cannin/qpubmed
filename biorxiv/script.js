@@ -1,6 +1,6 @@
 import { CATEGORIES } from './category.js';
 
-const VERSION = 'v0.0.3';
+const VERSION = 'v0.0.4';
 
 // Max interval value if numeric is 100
 const CONFIG = {
